@@ -20,7 +20,7 @@
   },
   "homepage": "https://github.com/morpho-association/morpho-subgraphs#readme",
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.0.0"
   },
   "scripts": {
     "graph:codegen": "graph codegen",
