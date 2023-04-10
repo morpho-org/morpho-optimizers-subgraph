@@ -1,4 +1,4 @@
-import { BigDecimal, BigInt, Bytes } from "@graphprotocol/graph-ts";
+import { BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 
 import { ERC20 } from "../../../generated/MorphoAaveV2/ERC20";
 import { AaveV3AddressesProvider } from "../../../generated/MorphoAaveV3/AaveV3AddressesProvider";
@@ -50,7 +50,7 @@ import {
   UserNonceIncremented,
 } from "../../../generated/MorphoAaveV3/MorphoAaveV3";
 import { Market } from "../../../generated/schema";
-import { AAVE_V3_ORACLE_OFFSET, BASE_UNITS, RAY_BI, WAD } from "../../constants";
+import { AAVE_V3_ORACLE_OFFSET, BASE_UNITS, RAY_BI } from "../../constants";
 import {
   getMarket,
   getOrInitLendingProtocol,
@@ -198,9 +198,7 @@ export function handleMarketCreated(event: MarketCreated): void {
   const addressProvider = AaveV3AddressesProvider.bind(morpho.addressesProvider());
   const oracle = AaveV3PriceOracle.bind(addressProvider.getPriceOracle());
 
-  const dataProvider = AaveV3DataProvider.bind(
-    addressProvider.getAddress(Bytes.fromHexString("0x01"))
-  );
+  const dataProvider = AaveV3DataProvider.bind(addressProvider.getPoolDataProvider());
 
   const reserveConfiguration = dataProvider.getReserveConfigurationData(underlying._address);
   market.protocol = event.address;
@@ -340,6 +338,10 @@ export function handleMarketCreated(event: MarketCreated): void {
   market.p2pBorrowInterestsUSD = BigDecimal.zero();
   market._indexesOffset = 27;
   market.rates = [];
+
+  const poolCaps = dataProvider.getReserveCaps(underlying._address);
+  market.supplyCap = poolCaps.getSupplyCap();
+  market.borrowCap = poolCaps.getBorrowCap();
   market.save();
 
   const list = getOrInitMarketList(event.address);

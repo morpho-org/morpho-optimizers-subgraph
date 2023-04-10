@@ -1,3 +1,6 @@
+import { log } from "@graphprotocol/graph-ts";
+
+import { Market } from "../../../generated/schema";
 import {
   ATokenUpgraded,
   BorrowCapChanged,
@@ -29,7 +32,17 @@ import {
 
 export function handleATokenUpgraded(event: ATokenUpgraded): void {}
 
-export function handleBorrowCapChanged(event: BorrowCapChanged): void {}
+export function handleBorrowCapChanged(event: BorrowCapChanged): void {
+  const market = Market.load(event.params.asset);
+  if (!market) {
+    log.info("[Borrow cap changed] Market not created on Morpho: {}", [
+      event.params.asset.toHexString(),
+    ]);
+    return;
+  }
+  market.borrowCap = event.params.newBorrowCap;
+  market.save();
+}
 
 export function handleBorrowableInIsolationChanged(event: BorrowableInIsolationChanged): void {}
 
@@ -77,7 +90,17 @@ export function handleSiloedBorrowingChanged(event: SiloedBorrowingChanged): voi
 
 export function handleStableDebtTokenUpgraded(event: StableDebtTokenUpgraded): void {}
 
-export function handleSupplyCapChanged(event: SupplyCapChanged): void {}
+export function handleSupplyCapChanged(event: SupplyCapChanged): void {
+  const market = Market.load(event.params.asset);
+  if (!market) {
+    log.info("[Supply cap changed] Market not created on Morpho: {}", [
+      event.params.asset.toHexString(),
+    ]);
+    return;
+  }
+  market.supplyCap = event.params.newSupplyCap;
+  market.save();
+}
 
 export function handleUnbackedMintCapChanged(event: UnbackedMintCapChanged): void {}
 
