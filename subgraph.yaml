@@ -238,6 +238,154 @@ dataSources:
         - event: RewardsClaimedAndTraded(indexed address,uint256)
           handler: handleRewardsClaimedAndTraded
       file: ./src/mapping/morpho-compound/morpho-compound.ts
+  - kind: ethereum
+    name: MorphoAaveV3
+    network: mainnet
+    source:
+      address: "0000000000000000000000000000000000000000"
+      abi: MorphoAaveV3
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Initialized
+        - OwnershipTransferStarted
+        - OwnershipTransferred
+        - Supplied
+        - CollateralSupplied
+        - Borrowed
+        - Repaid
+        - Withdrawn
+        - CollateralWithdrawn
+        - Liquidated
+        - ManagerApproval
+        - SupplyPositionUpdated
+        - BorrowPositionUpdated
+        - P2PSupplyDeltaUpdated
+        - P2PBorrowDeltaUpdated
+        - P2PTotalsUpdated
+        - RewardsClaimed
+        - IsCollateralSet
+        - IsClaimRewardsPausedSet
+        - IsSupplyPausedSet
+        - IsSupplyCollateralPausedSet
+        - IsBorrowPausedSet
+        - IsWithdrawPausedSet
+        - IsWithdrawCollateralPausedSet
+        - IsRepayPausedSet
+        - IsLiquidateCollateralPausedSet
+        - IsLiquidateBorrowPausedSet
+        - IsP2PDisabledSet
+        - IsDeprecatedSet
+        - P2PDeltasIncreased
+        - MarketCreated
+        - DefaultIterationsSet
+        - PositionsManagerSet
+        - RewardsManagerSet
+        - TreasuryVaultSet
+        - ReserveFactorSet
+        - P2PIndexCursorSet
+        - IndexesUpdated
+        - IdleSupplyUpdated
+        - ReserveFeeClaimed
+        - UserNonceIncremented
+      abis:
+        - name: MorphoAaveV3
+          file: ./abis/aave-v3/MorphoAaveV3.json
+        - name: AaveV3Pool
+          file: ./abis/aave-v3/AaveV3Pool.json
+        - name: AaveV3AddressesProvider
+          file: ./abis/aave-v3/AaveV3AddressesProvider.json
+        - name: AaveV3DataProvider
+          file: ./abis/aave-v3/AaveV3DataProvider.json
+        - name: AaveV3PriceOracle
+          file: ./abis/aave-v3/AaveV3PriceOracle.json
+      eventHandlers:
+        - event: Initialized(uint8)
+          handler: handleInitialized
+        - event: OwnershipTransferStarted(indexed address,indexed address)
+          handler: handleOwnershipTransferStarted
+        - event: OwnershipTransferred(indexed address,indexed address)
+          handler: handleOwnershipTransferred
+        - event: Supplied(indexed address,indexed address,indexed address,uint256,uint256,uint256)
+          handler: handleSupplied
+        - event: CollateralSupplied(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleCollateralSupplied
+        - event: Borrowed(address,indexed address,indexed address,indexed address,uint256,uint256,uint256)
+          handler: handleBorrowed
+        - event: Repaid(indexed address,indexed address,indexed address,uint256,uint256,uint256)
+          handler: handleRepaid
+        - event: Withdrawn(address,indexed address,indexed address,indexed address,uint256,uint256,uint256)
+          handler: handleWithdrawn
+        - event: CollateralWithdrawn(address,indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleCollateralWithdrawn
+        - event: Liquidated(indexed address,indexed address,indexed address,uint256,address,uint256)
+          handler: handleLiquidated
+        - event: ManagerApproval(indexed address,indexed address,bool)
+          handler: handleManagerApproval
+        - event: SupplyPositionUpdated(indexed address,indexed address,uint256,uint256)
+          handler: handleSupplyPositionUpdated
+        - event: BorrowPositionUpdated(indexed address,indexed address,uint256,uint256)
+          handler: handleBorrowPositionUpdated
+        - event: P2PSupplyDeltaUpdated(indexed address,uint256)
+          handler: handleP2PSupplyDeltaUpdated
+        - event: P2PBorrowDeltaUpdated(indexed address,uint256)
+          handler: handleP2PBorrowDeltaUpdated
+        - event: P2PTotalsUpdated(indexed address,uint256,uint256)
+          handler: handleP2PTotalsUpdated
+        - event: RewardsClaimed(indexed address,indexed address,indexed address,uint256)
+          handler: handleRewardsClaimed
+        - event: IsCollateralSet(indexed address,bool)
+          handler: handleIsCollateralSet
+        - event: IsClaimRewardsPausedSet(bool)
+          handler: handleIsClaimRewardsPausedSet
+        - event: IsSupplyPausedSet(indexed address,bool)
+          handler: handleIsSupplyPausedSet
+        - event: IsSupplyCollateralPausedSet(indexed address,bool)
+          handler: handleIsSupplyCollateralPausedSet
+        - event: IsBorrowPausedSet(indexed address,bool)
+          handler: handleIsBorrowPausedSet
+        - event: IsWithdrawPausedSet(indexed address,bool)
+          handler: handleIsWithdrawPausedSet
+        - event: IsWithdrawCollateralPausedSet(indexed address,bool)
+          handler: handleIsWithdrawCollateralPausedSet
+        - event: IsRepayPausedSet(indexed address,bool)
+          handler: handleIsRepayPausedSet
+        - event: IsLiquidateCollateralPausedSet(indexed address,bool)
+          handler: handleIsLiquidateCollateralPausedSet
+        - event: IsLiquidateBorrowPausedSet(indexed address,bool)
+          handler: handleIsLiquidateBorrowPausedSet
+        - event: IsP2PDisabledSet(indexed address,bool)
+          handler: handleIsP2PDisabledSet
+        - event: IsDeprecatedSet(indexed address,bool)
+          handler: handleIsDeprecatedSet
+        - event: P2PDeltasIncreased(indexed address,uint256)
+          handler: handleP2PDeltasIncreased
+        - event: MarketCreated(indexed address)
+          handler: handleMarketCreated
+        - event: DefaultIterationsSet(uint128,uint128)
+          handler: handleDefaultIterationsSet
+        - event: PositionsManagerSet(indexed address)
+          handler: handlePositionsManagerSet
+        - event: RewardsManagerSet(indexed address)
+          handler: handleRewardsManagerSet
+        - event: TreasuryVaultSet(indexed address)
+          handler: handleTreasuryVaultSet
+        - event: ReserveFactorSet(indexed address,uint16)
+          handler: handleReserveFactorSet
+        - event: P2PIndexCursorSet(indexed address,uint16)
+          handler: handleP2PIndexCursorSet
+        - event: IndexesUpdated(indexed address,uint256,uint256,uint256,uint256)
+          handler: handleIndexesUpdated
+        - event: IdleSupplyUpdated(indexed address,uint256)
+          handler: handleIdleSupplyUpdated
+        - event: ReserveFeeClaimed(indexed address,uint256)
+          handler: handleReserveFeeClaimed
+        - event: UserNonceIncremented(indexed address,indexed address,uint256)
+          handler: handleUserNonceIncremented
+      file: ./src/mapping/morpho-aave-v3/morpho-aave-v3.ts
 templates:
   - kind: ethereum
     name: LendingPool
@@ -390,3 +538,153 @@ templates:
         - event: PriceUpdated(indexed bytes32,uint256)
           handler: handlePriceUpdated
       file: ./src/mapping/morpho-compound/oracle.ts
+  - kind: ethereum
+    name: AaveV3Pool
+    network: mainnet
+    source:
+      abi: AaveV3Pool
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - BackUnbacked
+        - Borrow
+        - FlashLoan
+        - IsolationModeTotalDebtUpdated
+        - LiquidationCall
+        - MintUnbacked
+        - MintedToTreasury
+        - RebalanceStableBorrowRate
+        - Repay
+        - ReserveDataUpdated
+      abis:
+        - name: AaveV3Pool
+          file: ./abis/aave-v3/AaveV3Pool.json
+      eventHandlers:
+        - event: BackUnbacked(indexed address,indexed address,uint256,uint256)
+          handler: handleBackUnbacked
+        - event: Borrow(indexed address,address,indexed address,uint256,uint8,uint256,indexed uint16)
+          handler: handleBorrow
+        - event: FlashLoan(indexed address,address,indexed address,uint256,uint8,uint256,indexed uint16)
+          handler: handleFlashLoan
+        - event: IsolationModeTotalDebtUpdated(indexed address,uint256)
+          handler: handleIsolationModeTotalDebtUpdated
+        - event: LiquidationCall(indexed address,indexed address,indexed address,uint256,uint256,address,bool)
+          handler: handleLiquidationCall
+        - event: MintUnbacked(indexed address,address,indexed address,uint256,indexed uint16)
+          handler: handleMintUnbacked
+        - event: MintedToTreasury(indexed address,uint256)
+          handler: handleMintedToTreasury
+        - event: RebalanceStableBorrowRate(indexed address,indexed address)
+          handler: handleRebalanceStableBorrowRate
+        - event: Repay(indexed address,indexed address,indexed address,uint256,bool)
+          handler: handleRepay
+        - event: ReserveDataUpdated(indexed address,uint256,uint256,uint256,uint256,uint256)
+          handler: handleReserveDataUpdated
+        - event: ReserveUsedAsCollateralDisabled(indexed address,indexed address)
+          handler: handleReserveUsedAsCollateralDisabled
+        - event: ReserveUsedAsCollateralEnabled(indexed address,indexed address)
+          handler: handleReserveUsedAsCollateralEnabled
+        - event: Supply(indexed address,address,indexed address,uint256,indexed uint16)
+          handler: handleSupply
+        - event: SwapBorrowRateMode(indexed address,indexed address,uint8)
+          handler: handleSwapBorrowRateMode
+        - event: UserEModeSet(indexed address,uint8)
+          handler: handleUserEModeSet
+        - event: Withdraw(indexed address,indexed address,indexed address,uint256)
+          handler: handleWithdraw
+      file: ./src/mapping/morpho-aave-v3/aave-v3-pool.ts
+  - kind: ethereum
+    name: AaveV3PoolConfigurator
+    network: mainnet
+    source:
+      abi: AaveV3PoolConfigurator
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - ATokenUpgraded
+        - BorrowCapChanged
+        - BorrowableInIsolationChanged
+        - BridgeProtocolFeeUpdated
+        - CollateralConfigurationChanged
+        - DebtCeilingChanged
+        - EModeAssetCategoryChanged
+        - EModeCategoryAdded
+        - FlashloanPremiumToProtocolUpdated
+        - FlashloanPremiumTotalUpdated
+        - LiquidationProtocolFeeChanged
+        - ReserveActive
+        - ReserveBorrowing
+        - ReserveDropped
+        - ReserveFactorChanged
+        - ReserveFlashLoaning
+        - ReserveFrozen
+        - ReserveInitialized
+        - ReserveInterestRateStrategyChanged
+        - ReservePaused
+        - ReserveStableRateBorrowing
+        - SiloedBorrowingChanged
+        - StableDebtTokenUpgraded
+        - SupplyCapChanged
+        - UnbackedMintCapChanged
+        - VariableDebtTokenUpgraded
+      abis:
+        - name: AaveV3PoolConfigurator
+          file: ./abis/aave-v3/AaveV3PoolConfigurator.json
+      eventHandlers:
+        - event: ATokenUpgraded(indexed address,indexed address,indexed address)
+          handler: handleATokenUpgraded
+        - event: BorrowCapChanged(indexed address,uint256,uint256)
+          handler: handleBorrowCapChanged
+        - event: BorrowableInIsolationChanged(address,bool)
+          handler: handleBorrowableInIsolationChanged
+        - event: BridgeProtocolFeeUpdated(uint256,uint256)
+          handler: handleBridgeProtocolFeeUpdated
+        - event: CollateralConfigurationChanged(indexed address,uint256,uint256,uint256)
+          handler: handleCollateralConfigurationChanged
+        - event: DebtCeilingChanged(indexed address,uint256,uint256)
+          handler: handleDebtCeilingChanged
+        - event: EModeAssetCategoryChanged(indexed address,uint8,uint8)
+          handler: handleEModeAssetCategoryChanged
+        - event: EModeCategoryAdded(indexed uint8,uint256,uint256,uint256,address,string)
+          handler: handleEModeCategoryAdded
+        - event: FlashloanPremiumToProtocolUpdated(uint128,uint128)
+          handler: handleFlashloanPremiumToProtocolUpdated
+        - event: FlashloanPremiumTotalUpdated(uint128,uint128)
+          handler: handleFlashloanPremiumTotalUpdated
+        - event: LiquidationProtocolFeeChanged(indexed address,uint256,uint256)
+          handler: handleLiquidationProtocolFeeChanged
+        - event: ReserveActive(indexed address,bool)
+          handler: handleReserveActive
+        - event: ReserveBorrowing(indexed address,bool)
+          handler: handleReserveBorrowing
+        - event: ReserveDropped(indexed address)
+          handler: handleReserveDropped
+        - event: ReserveFactorChanged(indexed address,uint256,uint256)
+          handler: handleReserveFactorChanged
+        - event: ReserveFlashLoaning(indexed address,bool)
+          handler: handleReserveFlashLoaning
+        - event: ReserveFrozen(indexed address,bool)
+          handler: handleReserveFrozen
+        - event: ReserveInitialized(indexed address,indexed address,address,address,address)
+          handler: handleReserveInitialized
+        - event: ReserveInterestRateStrategyChanged(indexed address,address,address)
+          handler: handleReserveInterestRateStrategyChanged
+        - event: ReservePaused(indexed address,bool)
+          handler: handleReservePaused
+        - event: ReserveStableRateBorrowing(indexed address,bool)
+          handler: handleReserveStableRateBorrowing
+        - event: SiloedBorrowingChanged(indexed address,bool,bool)
+          handler: handleSiloedBorrowingChanged
+        - event: StableDebtTokenUpgraded(indexed address,indexed address,indexed address)
+          handler: handleStableDebtTokenUpgraded
+        - event: SupplyCapChanged(indexed address,uint256,uint256)
+          handler: handleSupplyCapChanged
+        - event: UnbackedMintCapChanged(indexed address,uint256,uint256)
+          handler: handleUnbackedMintCapChanged
+        - event: VariableDebtTokenUpgraded(indexed address,indexed address,indexed address)
+          handler: handleVariableDebtTokenUpgraded
+      file: ./src/mapping/morpho-aave-v3/aave-v3-pool-configurator.ts
