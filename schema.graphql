@@ -544,12 +544,18 @@ type LendingProtocol implements Protocol @entity {
 
     ##### Morpho Specificity #####
 
-  defaultMaxGasForMatchingSupply: BigInt!
-  defaultMaxGasForMatchingBorrow: BigInt!
-  defaultMaxGasForMatchingWithdraw: BigInt!
-  defaultMaxGasForMatchingRepay: BigInt!
+  ## Morpho Compound and morpho aave v2 specific fields
+  defaultMaxGasForMatchingSupply: BigInt
+  defaultMaxGasForMatchingBorrow: BigInt
+  defaultMaxGasForMatchingWithdraw: BigInt
+  defaultMaxGasForMatchingRepay: BigInt
 
-  maxSortedUsers: BigInt!
+  maxSortedUsers: BigInt
+
+  ## Morpho Aave v3 specific fields
+  defaultMaxIterationsWithdraw: BigInt
+  defaultMaxIterationsRepay: BigInt
+
   owner: Bytes!
   oracle: Bytes
 }
@@ -1080,6 +1086,9 @@ type Market @entity {
   " The total amount borrowed peer-to-peer"
   totalBorrowInP2P: BigDecimal!
 
+  " The total amount of collateral on the underlying pool"
+  totalCollateralOnPool: BigDecimal!
+
   " The p2pSupplyAmount in scaled units"
   _p2pSupplyAmount: BigInt!
 
@@ -1104,6 +1113,12 @@ type Market @entity {
   " The aggregation of the scaled p2p borrow balances if the p2p balances was on pool"
   _virtualScaledBorrow: BigInt!
 
+  " The scaled balance on pool used as collateral"
+  _scaledPoolCollateral: BigInt
+
+  " The scaled balance on pool used as supply and not matched peer-to-peer"
+  _scaledPoolSupplyOnly: BigInt
+
   " The poolSupplyAmount in scaled units"
   poolSupplyAmount: BigInt!
 
@@ -1118,6 +1133,12 @@ type Market @entity {
 
   " Whether the withdraw is paused or not"
   isWithdrawPaused: Boolean!
+
+  " Whether the withdraw collateral is paused or not"
+  isWithdrawCollateralPaused: Boolean
+
+  " Whether the supply collateral is paused or not"
+  isSupplyCollateralPaused: Boolean
 
   " Whether the repay is paused or not"
   isRepayPaused: Boolean!
@@ -1164,6 +1185,9 @@ type Market @entity {
 
   " The number of decimals of the rates and the indexes, WAD or RAY."
   _indexesOffset: Int!
+
+  " The idle supply on the Morpho contract"
+  _idleSupply: BigInt
 }
 
 #################################
