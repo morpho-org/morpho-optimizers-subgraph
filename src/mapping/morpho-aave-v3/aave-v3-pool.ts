@@ -1,3 +1,6 @@
+import { log } from "@graphprotocol/graph-ts";
+
+import { Market } from "../../../generated/schema";
 import {
   BackUnbacked,
   Borrow,
@@ -35,7 +38,23 @@ export function handleRebalanceStableBorrowRate(event: RebalanceStableBorrowRate
 
 export function handleRepay(event: Repay): void {}
 
-export function handleReserveDataUpdated(event: ReserveDataUpdated): void {}
+export function handleReserveDataUpdated(event: ReserveDataUpdated): void {
+  const market = Market.load(event.params.reserve);
+  if (!market) {
+    log.info("[Reserve data updated] Market not created on Morpho: {}", [
+      event.params.reserve.toHexString(),
+    ]);
+    return;
+  }
+  market._poolSupplyRate = event.params.liquidityRate;
+  market._poolBorrowRate = event.params.variableBorrowRate;
+
+  market._reserveSupplyIndex = event.params.liquidityIndex;
+  market._reserveBorrowIndex = event.params.variableBorrowIndex;
+
+  market.save();
+  // TODO: update financials here.
+}
 
 export function handleReserveUsedAsCollateralDisabled(
   event: ReserveUsedAsCollateralDisabled
