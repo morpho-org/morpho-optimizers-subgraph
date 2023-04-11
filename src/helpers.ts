@@ -1,10 +1,4 @@
-import {
-  BigDecimal,
-  BigInt,
-  Bytes,
-  ethereum,
-  log,
-} from "@graphprotocol/graph-ts";
+import { BigDecimal, BigInt, Bytes, ethereum, log } from "@graphprotocol/graph-ts";
 
 import {
   Account,
@@ -37,6 +31,7 @@ import {
   InterestRateType,
   BIGDECIMAL_HUNDRED,
   exponentToBigInt,
+  MORPHO_AAVE_V3_ADDRESS,
 } from "./constants";
 import { morphoPositionsFromProtocol } from "./mapping/common";
 import { getMarket, getOrInitToken } from "./utils/initializers";
@@ -85,11 +80,7 @@ export function updateMarketSnapshots(
   newProtocolRevenue: BigDecimal
 ): void {
   // get and update market daily snapshot
-  const marketDailySnapshot = getOrCreateMarketDailySnapshot(
-    market,
-    timestamp,
-    blockNumber
-  );
+  const marketDailySnapshot = getOrCreateMarketDailySnapshot(market, timestamp, blockNumber);
   marketDailySnapshot.rates = getSnapshotRates(
     market.rates,
     (timestamp.toI32() / SECONDS_PER_DAY).toString()
@@ -105,11 +96,7 @@ export function updateMarketSnapshots(
   marketDailySnapshot.save();
 
   // get and update market daily snapshot
-  const marketHourlySnapshot = getOrCreateMarketHourlySnapshot(
-    market,
-    timestamp,
-    blockNumber
-  );
+  const marketHourlySnapshot = getOrCreateMarketHourlySnapshot(market, timestamp, blockNumber);
 
   // update hourly revenues
   marketHourlySnapshot.hourlySupplySideRevenueUSD =
@@ -152,16 +139,12 @@ export function updateFinancials(
   snapshot.blockNumber = event.block.number;
   snapshot.timestamp = event.block.timestamp;
   snapshot.totalValueLockedUSD = protocol.totalValueLockedUSD;
-  snapshot.dailySupplySideRevenueUSD =
-    snapshot.dailySupplySideRevenueUSD.plus(newSupplyRevenue);
-  snapshot.cumulativeSupplySideRevenueUSD =
-    protocol.cumulativeSupplySideRevenueUSD;
+  snapshot.dailySupplySideRevenueUSD = snapshot.dailySupplySideRevenueUSD.plus(newSupplyRevenue);
+  snapshot.cumulativeSupplySideRevenueUSD = protocol.cumulativeSupplySideRevenueUSD;
   snapshot.dailyProtocolSideRevenueUSD =
     snapshot.dailyProtocolSideRevenueUSD.plus(newProtocolRevenue);
-  snapshot.cumulativeProtocolSideRevenueUSD =
-    protocol.cumulativeProtocolSideRevenueUSD;
-  snapshot.dailyTotalRevenueUSD =
-    snapshot.dailyTotalRevenueUSD.plus(newTotalRevenue);
+  snapshot.cumulativeProtocolSideRevenueUSD = protocol.cumulativeProtocolSideRevenueUSD;
+  snapshot.dailyTotalRevenueUSD = snapshot.dailyTotalRevenueUSD.plus(newTotalRevenue);
   snapshot.cumulativeTotalRevenueUSD = protocol.cumulativeTotalRevenueUSD;
   snapshot.totalDepositBalanceUSD = protocol.totalDepositBalanceUSD;
   snapshot.cumulativeDepositUSD = protocol.cumulativeDepositUSD;
@@ -265,14 +248,11 @@ export function snapshotUsage(
   dailySnapshot.cumulativeUniqueUsers = protocol.cumulativeUniqueUsers;
   dailySnapshot.totalPoolCount = protocol.totalPoolCount;
   dailySnapshot.openPositionCount = protocol.openPositionCount;
-  dailySnapshot.cumulativeUniqueDepositors =
-    protocol.cumulativeUniqueDepositors;
+  dailySnapshot.cumulativeUniqueDepositors = protocol.cumulativeUniqueDepositors;
   dailySnapshot.cumulativeUniqueBorrowers = protocol.cumulativeUniqueBorrowers;
-  dailySnapshot.cumulativeUniqueLiquidators =
-    protocol.cumulativeUniqueLiquidators;
+  dailySnapshot.cumulativeUniqueLiquidators = protocol.cumulativeUniqueLiquidators;
   dailySnapshot.cumulativePositionCount = protocol.cumulativePositionCount;
-  dailySnapshot.cumulativeUniqueLiquidatees =
-    protocol.cumulativeUniqueLiquidatees;
+  dailySnapshot.cumulativeUniqueLiquidatees = protocol.cumulativeUniqueLiquidatees;
   if (isNewTx) {
     dailySnapshot.dailyTransactionCount += 1;
   }
@@ -384,19 +364,9 @@ export function updateSnapshots(
   blockTimestamp: BigInt,
   blockNumber: BigInt
 ): void {
-  const marketHourlySnapshot = getOrCreateMarketHourlySnapshot(
-    market,
-    blockTimestamp,
-    blockNumber
-  );
-  const marketDailySnapshot = getOrCreateMarketDailySnapshot(
-    market,
-    blockTimestamp,
-    blockNumber
-  );
-  const financialSnapshot = FinancialsDailySnapshot.load(
-    getDayId(blockTimestamp)
-  );
+  const marketHourlySnapshot = getOrCreateMarketHourlySnapshot(market, blockTimestamp, blockNumber);
+  const marketDailySnapshot = getOrCreateMarketDailySnapshot(market, blockTimestamp, blockNumber);
+  const financialSnapshot = FinancialsDailySnapshot.load(getDayId(blockTimestamp));
   if (!financialSnapshot) {
     // should NOT happen
     log.warning("[updateSnapshots] financialSnapshot not found", []);
@@ -405,12 +375,9 @@ export function updateSnapshots(
 
   switch (eventType) {
     case EventType.DEPOSIT:
-      marketHourlySnapshot.hourlyDepositUSD =
-        marketHourlySnapshot.hourlyDepositUSD.plus(amountUSD);
-      marketDailySnapshot.dailyDepositUSD =
-        marketDailySnapshot.dailyDepositUSD.plus(amountUSD);
-      financialSnapshot.dailyDepositUSD =
-        financialSnapshot.dailyDepositUSD.plus(amountUSD);
+      marketHourlySnapshot.hourlyDepositUSD = marketHourlySnapshot.hourlyDepositUSD.plus(amountUSD);
+      marketDailySnapshot.dailyDepositUSD = marketDailySnapshot.dailyDepositUSD.plus(amountUSD);
+      financialSnapshot.dailyDepositUSD = financialSnapshot.dailyDepositUSD.plus(amountUSD);
       financialSnapshot.cumulativeDepositUSD = protocol.cumulativeDepositUSD;
       marketDailySnapshot.cumulativeDepositUSD = market.cumulativeDepositUSD;
       marketHourlySnapshot.cumulativeDepositUSD = market.cumulativeDepositUSD;
@@ -419,12 +386,9 @@ export function updateSnapshots(
 
       break;
     case EventType.BORROW:
-      marketHourlySnapshot.hourlyBorrowUSD =
-        marketHourlySnapshot.hourlyBorrowUSD.plus(amountUSD);
-      marketDailySnapshot.dailyBorrowUSD =
-        marketDailySnapshot.dailyBorrowUSD.plus(amountUSD);
-      financialSnapshot.dailyBorrowUSD =
-        financialSnapshot.dailyBorrowUSD.plus(amountUSD);
+      marketHourlySnapshot.hourlyBorrowUSD = marketHourlySnapshot.hourlyBorrowUSD.plus(amountUSD);
+      marketDailySnapshot.dailyBorrowUSD = marketDailySnapshot.dailyBorrowUSD.plus(amountUSD);
+      financialSnapshot.dailyBorrowUSD = financialSnapshot.dailyBorrowUSD.plus(amountUSD);
       financialSnapshot.cumulativeBorrowUSD = protocol.cumulativeBorrowUSD;
       marketDailySnapshot.cumulativeBorrowUSD = market.cumulativeBorrowUSD;
       marketHourlySnapshot.cumulativeBorrowUSD = market.cumulativeBorrowUSD;
@@ -434,36 +398,26 @@ export function updateSnapshots(
     case EventType.LIQUIDATOR:
       marketHourlySnapshot.hourlyLiquidateUSD =
         marketHourlySnapshot.hourlyLiquidateUSD.plus(amountUSD);
-      marketDailySnapshot.dailyLiquidateUSD =
-        marketDailySnapshot.dailyLiquidateUSD.plus(amountUSD);
-      financialSnapshot.dailyLiquidateUSD =
-        financialSnapshot.dailyLiquidateUSD.plus(amountUSD);
-      financialSnapshot.cumulativeLiquidateUSD =
-        protocol.cumulativeLiquidateUSD;
-      marketDailySnapshot.cumulativeLiquidateUSD =
-        market.cumulativeLiquidateUSD;
-      marketHourlySnapshot.cumulativeLiquidateUSD =
-        market.cumulativeLiquidateUSD;
+      marketDailySnapshot.dailyLiquidateUSD = marketDailySnapshot.dailyLiquidateUSD.plus(amountUSD);
+      financialSnapshot.dailyLiquidateUSD = financialSnapshot.dailyLiquidateUSD.plus(amountUSD);
+      financialSnapshot.cumulativeLiquidateUSD = protocol.cumulativeLiquidateUSD;
+      marketDailySnapshot.cumulativeLiquidateUSD = market.cumulativeLiquidateUSD;
+      marketHourlySnapshot.cumulativeLiquidateUSD = market.cumulativeLiquidateUSD;
       marketDailySnapshot.dailyNativeLiquidate =
         marketDailySnapshot.dailyNativeLiquidate.plus(amountNative);
       break;
     case EventType.WITHDRAW:
       marketHourlySnapshot.hourlyWithdrawUSD =
         marketHourlySnapshot.hourlyWithdrawUSD.plus(amountUSD);
-      marketDailySnapshot.dailyWithdrawUSD =
-        marketDailySnapshot.dailyWithdrawUSD.plus(amountUSD);
-      financialSnapshot.dailyWithdrawUSD =
-        financialSnapshot.dailyWithdrawUSD.plus(amountUSD);
+      marketDailySnapshot.dailyWithdrawUSD = marketDailySnapshot.dailyWithdrawUSD.plus(amountUSD);
+      financialSnapshot.dailyWithdrawUSD = financialSnapshot.dailyWithdrawUSD.plus(amountUSD);
       marketDailySnapshot.dailyNativeWithdraw =
         marketDailySnapshot.dailyNativeWithdraw.plus(amountNative);
       break;
     case EventType.REPAY:
-      marketHourlySnapshot.hourlyRepayUSD =
-        marketHourlySnapshot.hourlyRepayUSD.plus(amountUSD);
-      marketDailySnapshot.dailyRepayUSD =
-        marketDailySnapshot.dailyRepayUSD.plus(amountUSD);
-      financialSnapshot.dailyRepayUSD =
-        financialSnapshot.dailyRepayUSD.plus(amountUSD);
+      marketHourlySnapshot.hourlyRepayUSD = marketHourlySnapshot.hourlyRepayUSD.plus(amountUSD);
+      marketDailySnapshot.dailyRepayUSD = marketDailySnapshot.dailyRepayUSD.plus(amountUSD);
+      financialSnapshot.dailyRepayUSD = financialSnapshot.dailyRepayUSD.plus(amountUSD);
       marketDailySnapshot.dailyNativeRepay =
         marketDailySnapshot.dailyNativeRepay.plus(amountNative);
       break;
@@ -501,9 +455,7 @@ export function addPosition(
     positionCounter.nextCount = 0;
     positionCounter.save();
   }
-  const positionID = positionCounter.id
-    .concat("-")
-    .concat(positionCounter.nextCount.toString());
+  const positionID = positionCounter.id.concat("-").concat(positionCounter.nextCount.toString());
 
   let position = Position.load(positionID);
   const openPosition = position == null;
@@ -568,9 +520,7 @@ export function addPosition(
     protocol.cumulativePositionCount += 1;
     protocol.openPositionCount += 1;
     if (eventType == EventType.DEPOSIT) {
-      const depositorActorID = "depositor"
-        .concat("-")
-        .concat(account.id.toHexString());
+      const depositorActorID = "depositor".concat("-").concat(account.id.toHexString());
       let depositorActor = _ActiveAccount.load(depositorActorID);
       if (!depositorActor) {
         depositorActor = new _ActiveAccount(depositorActorID);
@@ -579,9 +529,7 @@ export function addPosition(
         protocol.cumulativeUniqueDepositors += 1;
       }
     } else if (eventType == EventType.BORROW) {
-      const borrowerActorID = "borrower"
-        .concat("-")
-        .concat(account.id.toHexString());
+      const borrowerActorID = "borrower".concat("-").concat(account.id.toHexString());
       let borrowerActor = _ActiveAccount.load(borrowerActorID);
       if (!borrowerActor) {
         borrowerActor = new _ActiveAccount(borrowerActorID);
@@ -618,14 +566,10 @@ export function subtractPosition(
     .concat(side);
   const positionCounter = _PositionCounter.load(counterID);
   if (!positionCounter) {
-    log.warning("[subtractPosition] position counter {} not found", [
-      counterID,
-    ]);
+    log.warning("[subtractPosition] position counter {} not found", [counterID]);
     return null;
   }
-  const positionID = positionCounter.id
-    .concat("-")
-    .concat(positionCounter.nextCount.toString());
+  const positionID = positionCounter.id.concat("-").concat(positionCounter.nextCount.toString());
   const position = Position.load(positionID);
   if (!position) {
     log.warning("[subtractPosition] position {} not found", [positionID]);
@@ -782,10 +726,8 @@ function getOrCreateMarketDailySnapshot(
     (blockTimestamp.toI32() / SECONDS_PER_DAY).toString()
   );
   snapshot.totalValueLockedUSD = market.totalValueLockedUSD;
-  snapshot.cumulativeSupplySideRevenueUSD =
-    market.cumulativeSupplySideRevenueUSD;
-  snapshot.cumulativeProtocolSideRevenueUSD =
-    market.cumulativeProtocolSideRevenueUSD;
+  snapshot.cumulativeSupplySideRevenueUSD = market.cumulativeSupplySideRevenueUSD;
+  snapshot.cumulativeProtocolSideRevenueUSD = market.cumulativeProtocolSideRevenueUSD;
   snapshot.cumulativeFlashloanUSD = market.cumulativeFlashloanUSD;
   snapshot.cumulativeTransferUSD = market.cumulativeTransferUSD;
   snapshot.cumulativeTotalRevenueUSD = market.cumulativeTotalRevenueUSD;
@@ -841,10 +783,8 @@ export function getOrCreateMarketHourlySnapshot(
     (blockTimestamp.toI32() / SECONDS_PER_HOUR).toString()
   );
   snapshot.totalValueLockedUSD = market.totalValueLockedUSD;
-  snapshot.cumulativeSupplySideRevenueUSD =
-    market.cumulativeSupplySideRevenueUSD;
-  snapshot.cumulativeProtocolSideRevenueUSD =
-    market.cumulativeProtocolSideRevenueUSD;
+  snapshot.cumulativeSupplySideRevenueUSD = market.cumulativeSupplySideRevenueUSD;
+  snapshot.cumulativeProtocolSideRevenueUSD = market.cumulativeProtocolSideRevenueUSD;
   snapshot.cumulativeTotalRevenueUSD = market.cumulativeTotalRevenueUSD;
   snapshot.totalDepositBalanceUSD = market.totalDepositBalanceUSD;
   snapshot.cumulativeDepositUSD = market.cumulativeDepositUSD;
@@ -863,18 +803,13 @@ export function getOrCreateMarketHourlySnapshot(
   return snapshot;
 }
 
-function getSnapshotRates(
-  rates: string[] | null,
-  timeSuffix: string
-): string[] {
+function getSnapshotRates(rates: string[] | null, timeSuffix: string): string[] {
   if (!rates) return [];
   const snapshotRates: string[] = [];
   for (let i = 0; i < rates.length; i++) {
     const rate = InterestRate.load(rates[i]);
     if (!rate) {
-      log.warning("[getSnapshotRates] rate {} not found, should not happen", [
-        rates[i],
-      ]);
+      log.warning("[getSnapshotRates] rate {} not found, should not happen", [rates[i]]);
       continue;
     }
 
@@ -905,9 +840,7 @@ function snapshotPosition(position: Position, event: ethereum.Event): void {
       ? market._lastPoolSupplyIndex
       : market._lastPoolBorrowIndex;
   const p2pIndex =
-    position.side === PositionSide.LENDER
-      ? market._p2pSupplyIndex
-      : market._p2pBorrowIndex;
+    position.side === PositionSide.LENDER ? market._p2pSupplyIndex : market._p2pBorrowIndex;
 
   const balanceOnPool = position.balanceOnPool.times(poolIndex).div(RAY_BI);
   const balanceInP2P = position.balanceInP2P.times(p2pIndex).div(RAY_BI);
@@ -943,24 +876,23 @@ function snapshotPosition(position: Position, event: ethereum.Event): void {
  * @param protocol The Morpho protocol to update
  * @param market The market to update
  */
-export function updateProtocolPosition(
-  protocol: LendingProtocol,
-  market: Market
-): void {
+export function updateProtocolPosition(protocol: LendingProtocol, market: Market): void {
   const morphoPositions = morphoPositionsFromProtocol(protocol, market);
 
   const newMarketSupplyUSD = morphoPositions.morphoSupplyOnPool
     .plus(morphoPositions.morphoSupplyP2P)
     .times(market.inputTokenPriceUSD);
 
-  const newMarketBorrow = morphoPositions.morphoBorrowOnPool.plus(
-    morphoPositions.morphoBorrowP2P
+  const newMarketCollateralUSD = morphoPositions.morphoCollateralOnPool.times(
+    market.inputTokenPriceUSD
   );
+
+  const newMarketBorrow = morphoPositions.morphoBorrowOnPool.plus(morphoPositions.morphoBorrowP2P);
   const newMarketBorrowUSD = newMarketBorrow.times(market.inputTokenPriceUSD);
 
   protocol.totalValueLockedUSD = protocol.totalValueLockedUSD
     .minus(market.totalDepositBalanceUSD)
-    .plus(newMarketSupplyUSD);
+    .plus(newMarketSupplyUSD.plus(newMarketCollateralUSD));
 
   protocol.totalDepositBalanceUSD = protocol.totalValueLockedUSD;
   protocol.totalBorrowBalanceUSD = protocol.totalBorrowBalanceUSD
@@ -974,12 +906,15 @@ export function updateProtocolPosition(
   market.inputTokenBalance = morphoPositions.morphoSupplyP2P_BI.plus(
     morphoPositions.morphoSupplyOnPool_BI
   );
-  market.totalDepositBalanceUSD = newMarketSupplyUSD;
+  market.totalDepositBalanceUSD = newMarketSupplyUSD.plus(newMarketCollateralUSD);
   market.totalBorrowBalanceUSD = newMarketBorrowUSD;
-  market.totalValueLockedUSD = newMarketSupplyUSD;
+  market.totalValueLockedUSD = newMarketSupplyUSD.plus(newMarketCollateralUSD);
   market.totalSupplyOnPool = morphoPositions.morphoSupplyOnPool;
   market.totalSupplyInP2P = morphoPositions.morphoSupplyP2P;
   market.totalBorrowOnPool = morphoPositions.morphoBorrowOnPool;
+  if (protocol.id.equals(MORPHO_AAVE_V3_ADDRESS))
+    market.totalCollateralOnPool = morphoPositions.morphoCollateralOnPool;
+
   market.totalBorrowInP2P = morphoPositions.morphoBorrowP2P;
   market.save();
 }
@@ -1006,10 +941,7 @@ export function updateP2PRates(market: Market): void {
     ? midRate.plus(borrowRate.minus(midRate).times(market.reserveFactor))
     : midRate;
   let p2pSupplyRateWithDelta = p2pSupplyRateWithFees;
-  if (
-    market._p2pSupplyDelta.gt(BigInt.zero()) &&
-    market._p2pSupplyAmount.gt(BigInt.zero())
-  ) {
+  if (market._p2pSupplyDelta.gt(BigInt.zero()) && market._p2pSupplyAmount.gt(BigInt.zero())) {
     let shareOfTheDelta = wadToRay(market._p2pSupplyDelta)
       .times(market._reserveSupplyIndex)
       .div(
@@ -1019,18 +951,13 @@ export function updateP2PRates(market: Market): void {
       );
     if (shareOfTheDelta.gt(exponentToBigInt(market._indexesOffset)))
       shareOfTheDelta = exponentToBigInt(market._indexesOffset);
-    const sotd = shareOfTheDelta
-      .toBigDecimal()
-      .div(exponentToBigDecimal(market._indexesOffset));
+    const sotd = shareOfTheDelta.toBigDecimal().div(exponentToBigDecimal(market._indexesOffset));
     p2pSupplyRateWithDelta = p2pSupplyRateWithFees
       .times(BIGDECIMAL_ONE.minus(sotd))
       .plus(supplyRate.times(sotd));
   }
   let p2pBorrowRateWithDelta = p2pBorrowRateWithFees;
-  if (
-    market._p2pBorrowDelta.gt(BigInt.zero()) &&
-    market._p2pBorrowAmount.gt(BigInt.zero())
-  ) {
+  if (market._p2pBorrowDelta.gt(BigInt.zero()) && market._p2pBorrowAmount.gt(BigInt.zero())) {
     let shareOfTheDelta = wadToRay(market._p2pBorrowDelta)
       .times(market._reserveBorrowIndex)
       .div(
@@ -1040,9 +967,7 @@ export function updateP2PRates(market: Market): void {
       );
     if (shareOfTheDelta.gt(exponentToBigInt(market._indexesOffset)))
       shareOfTheDelta = exponentToBigInt(market._indexesOffset);
-    const sotd = shareOfTheDelta
-      .toBigDecimal()
-      .div(exponentToBigDecimal(market._indexesOffset));
+    const sotd = shareOfTheDelta.toBigDecimal().div(exponentToBigDecimal(market._indexesOffset));
     p2pBorrowRateWithDelta = p2pBorrowRateWithFees
       .times(BIGDECIMAL_ONE.minus(sotd))
       .plus(borrowRate.times(sotd));
@@ -1067,12 +992,7 @@ export function updateP2PRates(market: Market): void {
   const borrowRateId = rates[3];
   if (!supplyRateId || !borrowRateId) return;
 
-  market.rates = [
-    supplyRateId,
-    p2pSupplyRate.id,
-    p2pBorrowRate.id,
-    borrowRateId,
-  ];
+  market.rates = [supplyRateId, p2pSupplyRate.id, p2pBorrowRate.id, borrowRateId];
 }
 
 export const getEventId = (hash: Bytes, logIndex: BigInt): Bytes =>

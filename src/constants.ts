@@ -2,6 +2,7 @@ import { Address, BigDecimal, BigInt, Bytes, ethereum } from "@graphprotocol/gra
 
 export const BASE_UNITS = BigDecimal.fromString("10000");
 export const WAD = BigDecimal.fromString("1000000000000000000");
+export const WAD_BI = BigInt.fromString("1000000000000000000");
 
 export const RAY = BigDecimal.fromString("1000000000000000000000000000");
 

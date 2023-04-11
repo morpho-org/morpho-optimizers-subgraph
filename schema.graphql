@@ -2219,4 +2219,6 @@ type UnderlyingTokenMapping @entity {
   id: Bytes!
   aToken: Bytes!
   debtToken: Bytes!
+  aTokenV3: Bytes
+  variableDebtTokenV3: Bytes
 }

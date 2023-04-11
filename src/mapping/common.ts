@@ -19,6 +19,7 @@ import {
   InterestRateSide,
   InterestRateType,
   MORPHO_AAVE_V2_ADDRESS,
+  MORPHO_AAVE_V3_ADDRESS,
   MORPHO_COMPOUND_ADDRESS,
   PositionSide,
 } from "../constants";
@@ -36,6 +37,7 @@ import {
   updateSnapshots,
 } from "../helpers";
 import { fetchMorphoPositionsAaveV2 } from "../utils/aaveV2/fetchers";
+import { fetchMorphoPositionsAaveV3 } from "../utils/aaveV3/fetchers";
 import { fetchMorphoPositionsCompound } from "../utils/compound/fetchers";
 import { getMarket, getOrInitLendingProtocol, getOrInitToken } from "../utils/initializers";
 
@@ -50,7 +52,9 @@ export class MorphoPositions {
     public readonly morphoSupplyOnPool_BI: BigInt,
     public readonly morphoBorrowOnPool_BI: BigInt,
     public readonly morphoSupplyP2P_BI: BigInt,
-    public readonly morphoBorrowP2P_BI: BigInt
+    public readonly morphoBorrowP2P_BI: BigInt,
+    public readonly morphoCollateralOnPool: BigDecimal,
+    public readonly morphoCollateralOnPool_BI: BigInt
   ) {}
 }
 
@@ -64,6 +68,8 @@ export function morphoPositionsFromProtocol(
     morphoPositions = fetchMorphoPositionsAaveV2(market);
   } else if (protocol.id.equals(MORPHO_COMPOUND_ADDRESS)) {
     morphoPositions = fetchMorphoPositionsCompound(market);
+  } else if (protocol.id.equals(MORPHO_AAVE_V3_ADDRESS)) {
+    morphoPositions = fetchMorphoPositionsAaveV3(market);
   } else {
     morphoPositions = new MorphoPositions(
       BigDecimal.zero(),
@@ -73,6 +79,8 @@ export function morphoPositionsFromProtocol(
       BigInt.zero(),
       BigInt.zero(),
       BigInt.zero(),
+      BigInt.zero(),
+      BigDecimal.zero(),
       BigInt.zero()
     );
   }

@@ -5,7 +5,6 @@ import { LendingPool } from "../../generated/MorphoAaveV2/LendingPool";
 import { LendingPoolAddressesProvider } from "../../generated/MorphoAaveV2/LendingPoolAddressesProvider";
 import { MorphoAaveV2 } from "../../generated/MorphoAaveV2/MorphoAaveV2";
 import { AaveV3AddressesProvider } from "../../generated/MorphoAaveV3/AaveV3AddressesProvider";
-import { AaveV3Pool } from "../../generated/MorphoAaveV3/AaveV3Pool";
 import { MorphoAaveV3 } from "../../generated/MorphoAaveV3/MorphoAaveV3";
 import { MorphoCompound } from "../../generated/MorphoCompound/MorphoCompound";
 import { Token, LendingProtocol, Market, _MarketList } from "../../generated/schema";
