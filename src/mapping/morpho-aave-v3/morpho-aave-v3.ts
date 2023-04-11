@@ -49,7 +49,7 @@ import {
   ReserveFeeClaimed,
   UserNonceIncremented,
 } from "../../../generated/MorphoAaveV3/MorphoAaveV3";
-import { Market } from "../../../generated/schema";
+import { Market, UnderlyingTokenMapping } from "../../../generated/schema";
 import { AAVE_V3_ORACLE_OFFSET, BASE_UNITS, RAY_BI } from "../../constants";
 import {
   getMarket,
@@ -57,6 +57,15 @@ import {
   getOrInitMarketList,
   getOrInitToken,
 } from "../../utils/initializers";
+import {
+  _handleBorrowed,
+  _handleLiquidated,
+  _handleP2PIndexesUpdated,
+  _handleRepaid,
+  _handleSupplied,
+  _handleSupplierPositionUpdated,
+  _handleWithdrawn,
+} from "../common";
 
 export function handleInitialized(event: Initialized): void {
   const protocol = getOrInitLendingProtocol(event.address);
@@ -70,25 +79,109 @@ export function handleOwnershipTransferred(event: OwnershipTransferred): void {
   protocol.owner = event.params.newOwner;
 }
 
-export function handleSupplied(event: Supplied): void {}
+export function handleSupplied(event: Supplied): void {
+  _handleSupplied(
+    event,
+    event.params.underlying,
+    event.params.onBehalf,
+    event.params.amount,
+    event.params.scaledOnPool,
+    event.params.scaledInP2P,
+    false
+  );
+}
 
-export function handleCollateralSupplied(event: CollateralSupplied): void {}
+export function handleCollateralSupplied(event: CollateralSupplied): void {
+  _handleSupplied(
+    event,
+    event.params.underlying,
+    event.params.onBehalf,
+    event.params.amount,
+    event.params.scaledBalance,
+    BigInt.zero(),
+    true
+  );
+}
 
-export function handleBorrowed(event: Borrowed): void {}
+export function handleBorrowed(event: Borrowed): void {
+  _handleBorrowed(
+    event,
+    event.params.underlying,
+    event.params.onBehalf,
+    event.params.amount,
+    event.params.scaledOnPool,
+    event.params.scaledInP2P
+  );
+}
 
-export function handleRepaid(event: Repaid): void {}
+export function handleRepaid(event: Repaid): void {
+  _handleRepaid(
+    event,
+    event.params.underlying,
+    event.params.onBehalf,
+    event.params.amount,
+    event.params.scaledOnPool,
+    event.params.scaledInP2P
+  );
+}
 
-export function handleWithdrawn(event: Withdrawn): void {}
+export function handleWithdrawn(event: Withdrawn): void {
+  _handleWithdrawn(
+    event,
+    event.params.underlying,
+    event.params.onBehalf,
+    event.params.amount,
+    event.params.scaledOnPool,
+    event.params.scaledInP2P,
+    false
+  );
+}
 
-export function handleCollateralWithdrawn(event: CollateralWithdrawn): void {}
+export function handleCollateralWithdrawn(event: CollateralWithdrawn): void {
+  _handleWithdrawn(
+    event,
+    event.params.underlying,
+    event.params.onBehalf,
+    event.params.amount,
+    event.params.scaledBalance,
+    BigInt.zero(),
+    true
+  );
+}
 
-export function handleLiquidated(event: Liquidated): void {}
+export function handleLiquidated(event: Liquidated): void {
+  _handleLiquidated(
+    event,
+    event.params.underlyingCollateral,
+    event.params.underlyingBorrowed,
+    event.params.liquidator,
+    event.params.borrower,
+    event.params.amountSeized,
+    event.params.amountLiquidated
+  );
+}
 
 export function handleManagerApproval(event: ManagerApproval): void {}
 
-export function handleSupplyPositionUpdated(event: SupplyPositionUpdated): void {}
+export function handleSupplyPositionUpdated(event: SupplyPositionUpdated): void {
+  _handleSupplierPositionUpdated(
+    event,
+    event.params.underlying,
+    event.params.user,
+    event.params.scaledOnPool,
+    event.params.scaledInP2P
+  );
+}
 
-export function handleBorrowPositionUpdated(event: BorrowPositionUpdated): void {}
+export function handleBorrowPositionUpdated(event: BorrowPositionUpdated): void {
+  _handleSupplierPositionUpdated(
+    event,
+    event.params.underlying,
+    event.params.user,
+    event.params.scaledOnPool,
+    event.params.scaledInP2P
+  );
+}
 
 export function handleP2PSupplyDeltaUpdated(event: P2PSupplyDeltaUpdated): void {
   const market = getMarket(event.params.underlying);
@@ -180,10 +273,7 @@ export function handleIsDeprecatedSet(event: IsDeprecatedSet): void {
   market.save();
 }
 
-export function handleP2PDeltasIncreased(event: P2PDeltasIncreased): void {
-  const market = getMarket(event.params.underlying);
-  event.params.amount;
-}
+export function handleP2PDeltasIncreased(event: P2PDeltasIncreased): void {}
 
 export function handleMarketCreated(event: MarketCreated): void {
   const protocol = getOrInitLendingProtocol(event.address);
@@ -228,6 +318,15 @@ export function handleMarketCreated(event: MarketCreated): void {
 
   // Query the underlyings in the underlying market
   const morphoMarket = morpho.market(event.params.underlying);
+
+  // Add the underlying tokens mapping
+  let underlyingMapping = UnderlyingTokenMapping.load(event.params.underlying);
+  if (underlyingMapping == null) {
+    underlyingMapping = new UnderlyingTokenMapping(event.params.underlying);
+  }
+  underlyingMapping.variableDebtTokenV3 = morphoMarket.variableDebtToken;
+  underlyingMapping.aTokenV3 = morphoMarket.aToken;
+  underlyingMapping.save();
 
   market.inputTokenBalance = underlying.balanceOf(morphoMarket.aToken);
   market.inputTokenPriceUSD = oracle
@@ -377,7 +476,16 @@ export function handleP2PIndexCursorSet(event: P2PIndexCursorSet): void {
   market.save();
 }
 
-export function handleIndexesUpdated(event: IndexesUpdated): void {}
+export function handleIndexesUpdated(event: IndexesUpdated): void {
+  _handleP2PIndexesUpdated(
+    event,
+    event.params.underlying,
+    event.params.poolSupplyIndex,
+    event.params.p2pSupplyIndex,
+    event.params.poolBorrowIndex,
+    event.params.p2pBorrowIndex
+  );
+}
 
 export function handleIdleSupplyUpdated(event: IdleSupplyUpdated): void {
   const market = getMarket(event.params.underlying);
