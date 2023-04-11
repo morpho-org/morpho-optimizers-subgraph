@@ -259,12 +259,14 @@ export function snapshotUsage(
 
   switch (eventType) {
     case EventType.DEPOSIT:
+    case EventType.DEPOSIT_COLLATERAL:
       dailySnapshot.dailyDepositCount += 1;
       if (isNewActor) {
         dailySnapshot.dailyActiveDepositors += 1;
       }
       break;
     case EventType.WITHDRAW:
+    case EventType.WITHDRAW_COLLATERAL:
       dailySnapshot.dailyWithdrawCount += 1;
       break;
     case EventType.BORROW:
@@ -333,9 +335,11 @@ export function snapshotUsage(
 
   switch (eventType) {
     case EventType.DEPOSIT:
+    case EventType.DEPOSIT_COLLATERAL:
       hourlySnapshot.hourlyDepositCount += 1;
       break;
     case EventType.WITHDRAW:
+    case EventType.WITHDRAW_COLLATERAL:
       hourlySnapshot.hourlyWithdrawCount += 1;
       break;
     case EventType.BORROW:
@@ -375,6 +379,7 @@ export function updateSnapshots(
 
   switch (eventType) {
     case EventType.DEPOSIT:
+    case EventType.DEPOSIT_COLLATERAL:
       marketHourlySnapshot.hourlyDepositUSD = marketHourlySnapshot.hourlyDepositUSD.plus(amountUSD);
       marketDailySnapshot.dailyDepositUSD = marketDailySnapshot.dailyDepositUSD.plus(amountUSD);
       financialSnapshot.dailyDepositUSD = financialSnapshot.dailyDepositUSD.plus(amountUSD);
@@ -407,6 +412,7 @@ export function updateSnapshots(
         marketDailySnapshot.dailyNativeLiquidate.plus(amountNative);
       break;
     case EventType.WITHDRAW:
+    case EventType.WITHDRAW_COLLATERAL:
       marketHourlySnapshot.hourlyWithdrawUSD =
         marketHourlySnapshot.hourlyWithdrawUSD.plus(amountUSD);
       marketDailySnapshot.dailyWithdrawUSD = marketDailySnapshot.dailyWithdrawUSD.plus(amountUSD);
@@ -442,12 +448,14 @@ export function addPosition(
   eventType: i32,
   event: ethereum.Event
 ): Position {
-  const counterID = account.id
+  let counterID = account.id
     .toHexString()
     .concat("-")
     .concat(market.id.toHexString())
     .concat("-")
     .concat(side);
+  if (side == PositionSide.LENDER && eventType == EventType.DEPOSIT_COLLATERAL)
+    counterID += "-collateral";
   let positionCounter = _PositionCounter.load(counterID);
   if (!positionCounter) {
     positionCounter = new _PositionCounter(counterID);
@@ -456,7 +464,6 @@ export function addPosition(
     positionCounter.save();
   }
   const positionID = positionCounter.id.concat("-").concat(positionCounter.nextCount.toString());
-
   let position = Position.load(positionID);
   const openPosition = position == null;
   if (openPosition) {
@@ -468,9 +475,9 @@ export function addPosition(
     position.blockNumberOpened = event.block.number;
     position.timestampOpened = event.block.timestamp;
     position.side = side;
-    if (side == PositionSide.LENDER) {
+    if (side == PositionSide.LENDER && eventType == EventType.DEPOSIT_COLLATERAL)
       position.isCollateral = true;
-    }
+
     position.balanceOnPool = BigInt.zero();
     position.balanceInP2P = BigInt.zero();
     position._virtualP2P = BigInt.zero();
@@ -486,7 +493,7 @@ export function addPosition(
     position.save();
   }
   position = position!;
-  if (eventType == EventType.DEPOSIT) {
+  if (eventType == EventType.DEPOSIT || eventType == EventType.DEPOSIT_COLLATERAL) {
     position.depositCount += 1;
   } else if (eventType == EventType.BORROW) {
     position.borrowCount += 1;
@@ -507,7 +514,7 @@ export function addPosition(
     market.positionCount += 1;
     market.openPositionCount += 1;
 
-    if (eventType == EventType.DEPOSIT) {
+    if (eventType == EventType.DEPOSIT || eventType == EventType.DEPOSIT_COLLATERAL) {
       market.lendingPositionCount += 1;
     } else if (eventType == EventType.BORROW) {
       market.borrowingPositionCount += 1;
@@ -519,7 +526,7 @@ export function addPosition(
     //
     protocol.cumulativePositionCount += 1;
     protocol.openPositionCount += 1;
-    if (eventType == EventType.DEPOSIT) {
+    if (eventType == EventType.DEPOSIT || eventType == EventType.DEPOSIT_COLLATERAL) {
       const depositorActorID = "depositor".concat("-").concat(account.id.toHexString());
       let depositorActor = _ActiveAccount.load(depositorActorID);
       if (!depositorActor) {
@@ -558,12 +565,15 @@ export function subtractPosition(
   eventType: i32,
   event: ethereum.Event
 ): Position | null {
-  const counterID = account.id
+  let counterID = account.id
     .toHexString()
     .concat("-")
     .concat(market.id.toHexString())
     .concat("-")
     .concat(side);
+
+  if (side == PositionSide.LENDER && eventType == EventType.WITHDRAW_COLLATERAL)
+    counterID += "-collateral";
   const positionCounter = _PositionCounter.load(counterID);
   if (!positionCounter) {
     log.warning("[subtractPosition] position counter {} not found", [counterID]);
@@ -577,7 +587,7 @@ export function subtractPosition(
   }
 
   position.balance = balance;
-  if (eventType == EventType.WITHDRAW) {
+  if (eventType == EventType.WITHDRAW || eventType == EventType.WITHDRAW_COLLATERAL) {
     position.withdrawCount += 1;
     account.withdrawCount += 1;
   } else if (eventType == EventType.REPAY) {

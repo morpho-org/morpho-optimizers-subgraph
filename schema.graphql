@@ -1856,6 +1856,9 @@ type Deposit implements Event @entity(immutable: true) {
   " Nonce of the transaction that emitted this event "
   nonce: BigInt!
 
+  " Whether this deposit is used as collateral or not"
+  isCollateral: Boolean!
+
   " Event log index. For transactions that don't emit event, create arbitrary index starting from 0 "
   logIndex: Int!
 
@@ -1905,6 +1908,9 @@ type Withdraw implements Event @entity(immutable: true) {
 
   " Nonce of the transaction that emitted this event "
   nonce: BigInt!
+
+  " Whether this withdraw concerns collateral or not"
+  isCollateral: Boolean!
 
   " Event log index. For transactions that don't emit event, create arbitrary index starting from 0 "
   logIndex: Int!

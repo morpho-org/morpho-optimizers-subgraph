@@ -93,7 +93,8 @@ export function _handleSupplied(
   accountID: Address,
   amount: BigInt,
   balanceOnPool: BigInt,
-  balanceInP2P: BigInt
+  balanceInP2P: BigInt,
+  isCollateral: boolean
 ): void {
   const market = getMarket(marketAddress);
 
@@ -120,7 +121,7 @@ export function _handleSupplied(
     market,
     account,
     PositionSide.LENDER,
-    EventType.DEPOSIT,
+    isCollateral ? EventType.DEPOSIT_COLLATERAL : EventType.DEPOSIT,
     event
   );
 
@@ -129,13 +130,18 @@ export function _handleSupplied(
   market._virtualScaledSupply = market._virtualScaledSupply
     .minus(position._virtualP2P)
     .plus(virtualP2P);
-
-  market._scaledSupplyOnPool = market._scaledSupplyOnPool
-    .minus(position.balanceOnPool)
-    .plus(balanceOnPool);
-  market._scaledSupplyInP2P = market._scaledSupplyInP2P
-    .minus(position.balanceInP2P)
-    .plus(balanceInP2P);
+  if (isCollateral) {
+    market._scaledPoolCollateral = market
+      ._scaledPoolCollateral!.minus(position.balanceOnPool)
+      .plus(balanceOnPool);
+  } else {
+    market._scaledSupplyOnPool = market._scaledSupplyOnPool
+      .minus(position.balanceOnPool)
+      .plus(balanceOnPool);
+    market._scaledSupplyInP2P = market._scaledSupplyInP2P
+      .minus(position.balanceInP2P)
+      .plus(balanceInP2P);
+  }
 
   position.balanceOnPool = balanceOnPool;
   position.balanceInP2P = balanceInP2P;
@@ -166,6 +172,9 @@ export function _handleSupplied(
     .toBigDecimal()
     .div(exponentToBigDecimal(inputToken.decimals))
     .times(market.inputTokenPriceUSD);
+  deposit.isCollateral = isCollateral;
+  deposit.gasPrice = event.transaction.gasPrice;
+  deposit.gasLimit = event.transaction.gasLimit;
   deposit.save();
 
   // update metrics
@@ -205,7 +214,8 @@ export function _handleWithdrawn(
   accountID: Address,
   amount: BigInt,
   balanceOnPool: BigInt,
-  balanceInP2P: BigInt
+  balanceInP2P: BigInt,
+  isCollateral: boolean
 ): void {
   const market = getMarket(marketAddress);
 
@@ -284,6 +294,9 @@ export function _handleWithdrawn(
     .toBigDecimal()
     .div(exponentToBigDecimal(inputToken.decimals))
     .times(market.inputTokenPriceUSD);
+  withdraw.isCollateral = isCollateral;
+  withdraw.gasPrice = event.transaction.gasPrice;
+  withdraw.gasLimit = event.transaction.gasLimit;
   withdraw.save();
 
   protocol.withdrawCount += 1;
@@ -515,6 +528,8 @@ export function _handleBorrowed(
     .toBigDecimal()
     .div(exponentToBigDecimal(inputToken.decimals))
     .times(market.inputTokenPriceUSD);
+  borrow.gasPrice = event.transaction.gasPrice;
+  borrow.gasLimit = event.transaction.gasLimit;
   borrow.save();
 
   // update metrics
@@ -780,6 +795,8 @@ export function _handleRepaid(
     .toBigDecimal()
     .div(exponentToBigDecimal(inputToken.decimals))
     .times(market.inputTokenPriceUSD);
+  repay.gasPrice = event.transaction.gasPrice;
+  repay.gasLimit = event.transaction.gasLimit;
   repay.save();
 
   protocol.repayCount += 1;

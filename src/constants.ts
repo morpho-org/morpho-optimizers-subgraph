@@ -47,6 +47,10 @@ export namespace EventType {
   export const SUPPLIER_POSITION_UPDATE = 7;
 
   export const BORROWER_POSITION_UPDATE = 8;
+
+  export const DEPOSIT_COLLATERAL = 9;
+
+  export const WITHDRAW_COLLATERAL = 10;
 }
 
 export namespace ActivityType {
