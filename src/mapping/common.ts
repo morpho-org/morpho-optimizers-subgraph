@@ -5,9 +5,7 @@ import {
   Account,
   Borrow,
   Deposit,
-  LendingProtocol,
   Liquidate,
-  Market,
   Repay,
   Withdraw,
 } from "../../generated/schema";
@@ -18,9 +16,6 @@ import {
   exponentToBigInt,
   InterestRateSide,
   InterestRateType,
-  MORPHO_AAVE_V2_ADDRESS,
-  MORPHO_AAVE_V3_ADDRESS,
-  MORPHO_COMPOUND_ADDRESS,
   PositionSide,
 } from "../constants";
 import {
@@ -36,56 +31,9 @@ import {
   updateProtocolPosition,
   updateSnapshots,
 } from "../helpers";
-import { fetchMorphoPositionsAaveV2 } from "../utils/aaveV2/fetchers";
-import { fetchMorphoPositionsAaveV3 } from "../utils/aaveV3/fetchers";
-import { fetchMorphoPositionsCompound } from "../utils/compound/fetchers";
 import { getMarket, getOrInitLendingProtocol, getOrInitToken } from "../utils/initializers";
 
 import { ReserveUpdateParams } from "./morpho-aave/lending-pool";
-
-export class MorphoPositions {
-  constructor(
-    public readonly morphoSupplyOnPool: BigDecimal,
-    public readonly morphoBorrowOnPool: BigDecimal,
-    public readonly morphoSupplyP2P: BigDecimal,
-    public readonly morphoBorrowP2P: BigDecimal,
-    public readonly morphoSupplyOnPool_BI: BigInt,
-    public readonly morphoBorrowOnPool_BI: BigInt,
-    public readonly morphoSupplyP2P_BI: BigInt,
-    public readonly morphoBorrowP2P_BI: BigInt,
-    public readonly morphoCollateralOnPool: BigDecimal,
-    public readonly morphoCollateralOnPool_BI: BigInt
-  ) {}
-}
-
-export function morphoPositionsFromProtocol(
-  protocol: LendingProtocol,
-  market: Market
-): MorphoPositions {
-  let morphoPositions: MorphoPositions;
-
-  if (protocol.id.equals(MORPHO_AAVE_V2_ADDRESS)) {
-    morphoPositions = fetchMorphoPositionsAaveV2(market);
-  } else if (protocol.id.equals(MORPHO_COMPOUND_ADDRESS)) {
-    morphoPositions = fetchMorphoPositionsCompound(market);
-  } else if (protocol.id.equals(MORPHO_AAVE_V3_ADDRESS)) {
-    morphoPositions = fetchMorphoPositionsAaveV3(market);
-  } else {
-    morphoPositions = new MorphoPositions(
-      BigDecimal.zero(),
-      BigDecimal.zero(),
-      BigDecimal.zero(),
-      BigDecimal.zero(),
-      BigInt.zero(),
-      BigInt.zero(),
-      BigInt.zero(),
-      BigInt.zero(),
-      BigDecimal.zero(),
-      BigInt.zero()
-    );
-  }
-  return morphoPositions;
-}
 
 export function _handleSupplied(
   event: ethereum.Event,
@@ -147,6 +95,8 @@ export function _handleSupplied(
   position.balanceInP2P = balanceInP2P;
   position._virtualP2P = virtualP2P;
 
+  if (isCollateral) {
+  }
   const totalSupplyOnPool = balanceOnPool
     .times(market._lastPoolSupplyIndex)
     .div(exponentToBigInt(market._indexesOffset));

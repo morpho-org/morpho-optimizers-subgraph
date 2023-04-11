@@ -33,7 +33,6 @@ import {
   exponentToBigInt,
   MORPHO_AAVE_V3_ADDRESS,
 } from "./constants";
-import { morphoPositionsFromProtocol } from "./mapping/common";
 import { getMarket, getOrInitToken } from "./utils/initializers";
 
 function getDay(timestamp: BigInt): BigInt {
@@ -887,22 +886,62 @@ function snapshotPosition(position: Position, event: ethereum.Event): void {
  * @param market The market to update
  */
 export function updateProtocolPosition(protocol: LendingProtocol, market: Market): void {
-  const morphoPositions = morphoPositionsFromProtocol(protocol, market);
+  const inputToken = getOrInitToken(market.inputToken);
 
-  const newMarketSupplyUSD = morphoPositions.morphoSupplyOnPool
-    .plus(morphoPositions.morphoSupplyP2P)
+  const newMarketSupplyOnPool_BI = market._scaledSupplyOnPool
+    .times(market._reserveSupplyIndex)
+    .div(exponentToBigInt(market._indexesOffset));
+
+  const newMarketSupplyOnPool = newMarketSupplyOnPool_BI
+    .toBigDecimal()
+    .div(exponentToBigDecimal(inputToken.decimals));
+
+  const newMarketSupplyInP2P_BI = market._scaledSupplyInP2P
+    .times(market._p2pSupplyIndex)
+    .div(exponentToBigInt(market._indexesOffset));
+
+  const newMarketSupplyInP2P = newMarketSupplyInP2P_BI
+    .toBigDecimal()
+    .div(exponentToBigDecimal(inputToken.decimals));
+
+  const newMarketSupplyCollateral_BI = market._scaledPoolCollateral
+    ? market._scaledPoolCollateral
+        .times(market._reserveSupplyIndex)
+        .div(exponentToBigInt(market._indexesOffset))
+    : BigInt.zero();
+
+  const newMarketSupplyCollateral = newMarketSupplyCollateral_BI
+    .toBigDecimal()
+    .div(exponentToBigDecimal(inputToken.decimals));
+
+  const newMarketSupplyUSD = newMarketSupplyOnPool
+    .plus(newMarketSupplyInP2P)
+    .plus(newMarketSupplyCollateral)
     .times(market.inputTokenPriceUSD);
 
-  const newMarketCollateralUSD = morphoPositions.morphoCollateralOnPool.times(
-    market.inputTokenPriceUSD
-  );
+  const newMarketBorrowOnPool_BI = market._scaledBorrowOnPool
+    .times(market._reserveBorrowIndex)
+    .div(exponentToBigInt(market._indexesOffset));
 
-  const newMarketBorrow = morphoPositions.morphoBorrowOnPool.plus(morphoPositions.morphoBorrowP2P);
-  const newMarketBorrowUSD = newMarketBorrow.times(market.inputTokenPriceUSD);
+  const newMarketBorrowOnPool = newMarketBorrowOnPool_BI
+    .toBigDecimal()
+    .div(exponentToBigDecimal(inputToken.decimals));
+
+  const newMarketBorrowInP2P_BI = market._scaledBorrowInP2P
+    .times(market._p2pBorrowIndex)
+    .div(exponentToBigInt(market._indexesOffset));
+
+  const newMarketBorrowInP2P = newMarketBorrowInP2P_BI
+    .toBigDecimal()
+    .div(exponentToBigDecimal(inputToken.decimals));
+
+  const newMarketBorrowUSD = newMarketBorrowOnPool
+    .plus(newMarketBorrowInP2P)
+    .times(market.inputTokenPriceUSD);
 
   protocol.totalValueLockedUSD = protocol.totalValueLockedUSD
     .minus(market.totalDepositBalanceUSD)
-    .plus(newMarketSupplyUSD.plus(newMarketCollateralUSD));
+    .plus(newMarketSupplyUSD);
 
   protocol.totalDepositBalanceUSD = protocol.totalValueLockedUSD;
   protocol.totalBorrowBalanceUSD = protocol.totalBorrowBalanceUSD
@@ -910,22 +949,21 @@ export function updateProtocolPosition(protocol: LendingProtocol, market: Market
     .plus(newMarketBorrowUSD);
   protocol.save();
 
-  market.variableBorrowedTokenBalance = morphoPositions.morphoBorrowP2P_BI.plus(
-    morphoPositions.morphoBorrowOnPool_BI
-  );
-  market.inputTokenBalance = morphoPositions.morphoSupplyP2P_BI.plus(
-    morphoPositions.morphoSupplyOnPool_BI
-  );
-  market.totalDepositBalanceUSD = newMarketSupplyUSD.plus(newMarketCollateralUSD);
-  market.totalBorrowBalanceUSD = newMarketBorrowUSD;
-  market.totalValueLockedUSD = newMarketSupplyUSD.plus(newMarketCollateralUSD);
-  market.totalSupplyOnPool = morphoPositions.morphoSupplyOnPool;
-  market.totalSupplyInP2P = morphoPositions.morphoSupplyP2P;
-  market.totalBorrowOnPool = morphoPositions.morphoBorrowOnPool;
-  if (protocol.id.equals(MORPHO_AAVE_V3_ADDRESS))
-    market.totalCollateralOnPool = morphoPositions.morphoCollateralOnPool;
+  market.variableBorrowedTokenBalance = newMarketBorrowInP2P_BI.plus(newMarketBorrowOnPool_BI);
 
-  market.totalBorrowInP2P = morphoPositions.morphoBorrowP2P;
+  market.inputTokenBalance = newMarketSupplyOnPool_BI
+    .plus(newMarketSupplyInP2P_BI)
+    .plus(newMarketSupplyCollateral_BI);
+
+  market.totalDepositBalanceUSD = newMarketSupplyUSD;
+  market.totalBorrowBalanceUSD = newMarketBorrowUSD;
+  market.totalValueLockedUSD = newMarketSupplyUSD;
+  market.totalSupplyOnPool = newMarketSupplyOnPool;
+  market.totalSupplyInP2P = newMarketSupplyInP2P;
+  market.totalBorrowOnPool = newMarketBorrowOnPool;
+  market.totalCollateralOnPool = newMarketSupplyCollateral;
+
+  market.totalBorrowInP2P = newMarketBorrowInP2P;
   market.save();
 }
 

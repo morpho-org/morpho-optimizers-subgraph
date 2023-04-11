@@ -4,10 +4,7 @@ import { AToken } from "../../../generated/MorphoAaveV2/AToken";
 import { ERC20 } from "../../../generated/MorphoAaveV2/ERC20";
 import { LendingPool } from "../../../generated/MorphoAaveV2/LendingPool";
 import { LendingPoolAddressesProvider } from "../../../generated/MorphoAaveV2/LendingPoolAddressesProvider";
-import {
-  MarketCreated,
-  MorphoAaveV2,
-} from "../../../generated/MorphoAaveV2/MorphoAaveV2";
+import { MarketCreated, MorphoAaveV2 } from "../../../generated/MorphoAaveV2/MorphoAaveV2";
 import { PriceOracle } from "../../../generated/MorphoAaveV2/PriceOracle";
 import { ProtocolDataProvider } from "../../../generated/MorphoAaveV2/ProtocolDataProvider";
 import { Market, UnderlyingTokenMapping } from "../../../generated/schema";
@@ -30,27 +27,20 @@ export function handleMarketCreated(event: MarketCreated): void {
   const morpho = MorphoAaveV2.bind(event.address);
 
   const lendingPool = LendingPool.bind(morpho.pool());
-  const addressProvider = LendingPoolAddressesProvider.bind(
-    morpho.addressesProvider()
-  );
+  const addressProvider = LendingPoolAddressesProvider.bind(morpho.addressesProvider());
   const oracle = PriceOracle.bind(addressProvider.getPriceOracle());
   const USDC = Address.fromString("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48");
   const ethPrice = oracle.getAssetPrice(USDC);
   const dataProvider = ProtocolDataProvider.bind(
     addressProvider.getAddress(Bytes.fromHexString("0x01"))
   );
-  const reserveConfiguration = dataProvider.getReserveConfigurationData(
-    underlying._address
-  );
+  const reserveConfiguration = dataProvider.getReserveConfigurationData(underlying._address);
   market.protocol = event.address;
   market.name = `Morpho ${aToken.name()}`;
   market.isActive = true;
   market.canBorrowFrom = true;
   market.canUseAsCollateral = true;
-  market.maximumLTV = reserveConfiguration
-    .getLtv()
-    .toBigDecimal()
-    .div(BASE_UNITS);
+  market.maximumLTV = reserveConfiguration.getLtv().toBigDecimal().div(BASE_UNITS);
   market.liquidationThreshold = reserveConfiguration
     .getLiquidationThreshold()
     .toBigDecimal()
@@ -159,9 +149,7 @@ export function handleMarketCreated(event: MarketCreated): void {
 
   const tokenMapping = new UnderlyingTokenMapping(underlying._address);
   tokenMapping.aToken = event.params._poolToken;
-  const tokenAddresses = dataProvider.getReserveTokensAddresses(
-    underlying._address
-  );
+  const tokenAddresses = dataProvider.getReserveTokensAddresses(underlying._address);
   tokenMapping.debtToken = tokenAddresses.getVariableDebtTokenAddress();
   tokenMapping.save();
 

@@ -3,10 +3,7 @@ import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 import { CToken } from "../../../generated/MorphoCompound/CToken";
 import { CompoundOracle } from "../../../generated/MorphoCompound/CompoundOracle";
 import { Comptroller } from "../../../generated/MorphoCompound/Comptroller";
-import {
-  MarketCreated,
-  MorphoCompound,
-} from "../../../generated/MorphoCompound/MorphoCompound";
+import { MarketCreated, MorphoCompound } from "../../../generated/MorphoCompound/MorphoCompound";
 import { Market } from "../../../generated/schema";
 import { CToken as CTokenTemplate } from "../../../generated/templates";
 import {

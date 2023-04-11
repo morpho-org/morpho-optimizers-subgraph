@@ -1116,9 +1116,6 @@ type Market @entity {
   " The scaled balance on pool used as collateral"
   _scaledPoolCollateral: BigInt
 
-  " The scaled balance on pool used as supply and not matched peer-to-peer"
-  _scaledPoolSupplyOnly: BigInt
-
   " The poolSupplyAmount in scaled units"
   poolSupplyAmount: BigInt!
 

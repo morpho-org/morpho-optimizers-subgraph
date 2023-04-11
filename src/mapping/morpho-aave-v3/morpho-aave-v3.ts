@@ -293,7 +293,6 @@ export function handleMarketCreated(event: MarketCreated): void {
   market._virtualScaledBorrow = BigInt.zero();
 
   market._scaledPoolCollateral = BigInt.zero();
-  market._scaledPoolSupplyOnly = BigInt.zero();
 
   market.isP2PDisabled = false;
 
