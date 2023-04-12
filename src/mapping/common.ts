@@ -541,7 +541,7 @@ export function _handleP2PIndexesUpdated(
   // New Interest = totalScaledSupply * (difference in liquidity index)
   let totalSupplyOnPool = market._scaledSupplyOnPool;
   if (market._scaledPoolCollateral)
-    totalSupplyOnPool = totalSupplyOnPool.plus(market._scaledPoolCollateral);
+    totalSupplyOnPool = totalSupplyOnPool.plus(market._scaledPoolCollateral!);
 
   const supplyDeltaIndexes = poolSupplyIndex
     .minus(market._lastPoolSupplyIndex)

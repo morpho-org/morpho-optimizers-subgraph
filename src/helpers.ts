@@ -31,7 +31,6 @@ import {
   InterestRateType,
   BIGDECIMAL_HUNDRED,
   exponentToBigInt,
-  MORPHO_AAVE_V3_ADDRESS,
 } from "./constants";
 import { getMarket, getOrInitToken } from "./utils/initializers";
 
@@ -905,8 +904,8 @@ export function updateProtocolPosition(protocol: LendingProtocol, market: Market
     .div(exponentToBigDecimal(inputToken.decimals));
 
   const newMarketSupplyCollateral_BI = market._scaledPoolCollateral
-    ? market._scaledPoolCollateral
-        .times(market._reserveSupplyIndex)
+    ? market
+        ._scaledPoolCollateral!.times(market._reserveSupplyIndex)
         .div(exponentToBigInt(market._indexesOffset))
     : BigInt.zero();
 
