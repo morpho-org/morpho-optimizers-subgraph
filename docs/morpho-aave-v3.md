@@ -4,7 +4,7 @@
 
 ### Supply only vs collateral
 
-On morpho aave v3, there is 2 types of supply positions: supply only or supply as collateral.
+On morpho aave v3, there are 2 types of supply positions: supply only or supply as collateral.
 
 A supply as collateral cannot be matched p2p with a borrower, but it permits to borrow against it.
 
@@ -31,7 +31,6 @@ The scaled balance of the protocol is now represented by `_scaledSupplyOnPool` p
 The `totalDepositBalanceUSD` is the total supply on pool, the total supply matched p2p, and the total collateral.
 
 The idleSupply is a new field, representing the supply amount that is not generating yields due to a supply cap on aave v3.
-This idleSupply is added in the of the market.
 
 
 For morpho aave v3 markets, the supply cap is not null.
