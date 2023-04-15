@@ -5,9 +5,7 @@ import {
   Account,
   Borrow,
   Deposit,
-  LendingProtocol,
   Liquidate,
-  Market,
   Repay,
   Withdraw,
 } from "../../generated/schema";
@@ -18,8 +16,6 @@ import {
   exponentToBigInt,
   InterestRateSide,
   InterestRateType,
-  MORPHO_AAVE_V2_ADDRESS,
-  MORPHO_COMPOUND_ADDRESS,
   PositionSide,
 } from "../constants";
 import {
@@ -35,49 +31,9 @@ import {
   updateProtocolPosition,
   updateSnapshots,
 } from "../helpers";
-import { fetchMorphoPositionsAaveV2 } from "../utils/aaveV2/fetchers";
-import { fetchMorphoPositionsCompound } from "../utils/compound/fetchers";
 import { getMarket, getOrInitLendingProtocol, getOrInitToken } from "../utils/initializers";
 
 import { ReserveUpdateParams } from "./morpho-aave/lending-pool";
-
-export class MorphoPositions {
-  constructor(
-    public readonly morphoSupplyOnPool: BigDecimal,
-    public readonly morphoBorrowOnPool: BigDecimal,
-    public readonly morphoSupplyP2P: BigDecimal,
-    public readonly morphoBorrowP2P: BigDecimal,
-    public readonly morphoSupplyOnPool_BI: BigInt,
-    public readonly morphoBorrowOnPool_BI: BigInt,
-    public readonly morphoSupplyP2P_BI: BigInt,
-    public readonly morphoBorrowP2P_BI: BigInt
-  ) {}
-}
-
-export function morphoPositionsFromProtocol(
-  protocol: LendingProtocol,
-  market: Market
-): MorphoPositions {
-  let morphoPositions: MorphoPositions;
-
-  if (protocol.id.equals(MORPHO_AAVE_V2_ADDRESS)) {
-    morphoPositions = fetchMorphoPositionsAaveV2(market);
-  } else if (protocol.id.equals(MORPHO_COMPOUND_ADDRESS)) {
-    morphoPositions = fetchMorphoPositionsCompound(market);
-  } else {
-    morphoPositions = new MorphoPositions(
-      BigDecimal.zero(),
-      BigDecimal.zero(),
-      BigDecimal.zero(),
-      BigDecimal.zero(),
-      BigInt.zero(),
-      BigInt.zero(),
-      BigInt.zero(),
-      BigInt.zero()
-    );
-  }
-  return morphoPositions;
-}
 
 export function _handleSupplied(
   event: ethereum.Event,
@@ -85,7 +41,8 @@ export function _handleSupplied(
   accountID: Address,
   amount: BigInt,
   balanceOnPool: BigInt,
-  balanceInP2P: BigInt
+  balanceInP2P: BigInt,
+  isCollateral: boolean
 ): void {
   const market = getMarket(marketAddress);
 
@@ -112,26 +69,33 @@ export function _handleSupplied(
     market,
     account,
     PositionSide.LENDER,
-    EventType.DEPOSIT,
+    isCollateral ? EventType.DEPOSIT_COLLATERAL : EventType.DEPOSIT,
     event
   );
 
-  const virtualP2P = balanceInP2P.times(market._p2pSupplyIndex).div(market._lastPoolSupplyIndex);
+  if (isCollateral) {
+    market._scaledPoolCollateral = market
+      ._scaledPoolCollateral!.minus(position.balanceOnPool)
+      .plus(balanceOnPool);
+  } else {
+    market._scaledSupplyOnPool = market._scaledSupplyOnPool
+      .minus(position.balanceOnPool)
+      .plus(balanceOnPool);
+    market._scaledSupplyInP2P = market._scaledSupplyInP2P
+      .minus(position.balanceInP2P)
+      .plus(balanceInP2P);
 
-  market._virtualScaledSupply = market._virtualScaledSupply
-    .minus(position._virtualP2P)
-    .plus(virtualP2P);
+    const virtualP2P = balanceInP2P.times(market._p2pSupplyIndex).div(market._lastPoolSupplyIndex);
 
-  market._scaledSupplyOnPool = market._scaledSupplyOnPool
-    .minus(position.balanceOnPool)
-    .plus(balanceOnPool);
-  market._scaledSupplyInP2P = market._scaledSupplyInP2P
-    .minus(position.balanceInP2P)
-    .plus(balanceInP2P);
+    market._virtualScaledSupply = market._virtualScaledSupply
+      .minus(position._virtualP2P)
+      .plus(virtualP2P);
+
+    position._virtualP2P = virtualP2P;
+    position.balanceInP2P = balanceInP2P;
+  }
 
   position.balanceOnPool = balanceOnPool;
-  position.balanceInP2P = balanceInP2P;
-  position._virtualP2P = virtualP2P;
 
   const totalSupplyOnPool = balanceOnPool
     .times(market._lastPoolSupplyIndex)
@@ -158,6 +122,9 @@ export function _handleSupplied(
     .toBigDecimal()
     .div(exponentToBigDecimal(inputToken.decimals))
     .times(market.inputTokenPriceUSD);
+  deposit.isCollateral = isCollateral;
+  deposit.gasPrice = event.transaction.gasPrice;
+  deposit.gasLimit = event.transaction.gasLimit;
   deposit.save();
 
   // update metrics
@@ -197,7 +164,8 @@ export function _handleWithdrawn(
   accountID: Address,
   amount: BigInt,
   balanceOnPool: BigInt,
-  balanceInP2P: BigInt
+  balanceInP2P: BigInt,
+  isCollateral: boolean
 ): void {
   const market = getMarket(marketAddress);
 
@@ -226,6 +194,7 @@ export function _handleWithdrawn(
     .times(market._p2pSupplyIndex)
     .div(exponentToBigInt(market._indexesOffset));
   const balance = totalSupplyOnPool.plus(totalSupplyInP2P);
+
   const position = subtractPosition(
     protocol,
     market,
@@ -244,22 +213,31 @@ export function _handleWithdrawn(
     return;
   }
 
-  const virtualP2P = balanceInP2P.times(market._p2pSupplyIndex).div(market._lastPoolSupplyIndex);
+  if (isCollateral) {
+    market._scaledPoolCollateral = market
+      ._scaledPoolCollateral!.minus(position.balanceOnPool)
+      .plus(balanceOnPool);
+  } else {
+    market._scaledSupplyOnPool = market._scaledSupplyOnPool
+      .minus(position.balanceOnPool)
+      .plus(balanceOnPool);
+    market._scaledSupplyInP2P = market._scaledSupplyInP2P
+      .minus(position.balanceInP2P)
+      .plus(balanceInP2P);
 
-  market._scaledSupplyOnPool = market._scaledSupplyOnPool
-    .minus(position.balanceOnPool)
-    .plus(balanceOnPool);
-  market._scaledSupplyInP2P = market._scaledSupplyInP2P
-    .minus(position.balanceInP2P)
-    .plus(balanceInP2P);
-  market._virtualScaledSupply = market._virtualScaledSupply
-    .minus(position._virtualP2P)
-    .plus(virtualP2P);
+    // We count the virtual only for non collateral positions that can be matched p2p
+    const virtualP2P = balanceInP2P.times(market._p2pSupplyIndex).div(market._lastPoolSupplyIndex);
+
+    market._virtualScaledSupply = market._virtualScaledSupply
+      .minus(position._virtualP2P)
+      .plus(virtualP2P);
+
+    position._virtualP2P = virtualP2P;
+
+    position.balanceInP2P = balanceInP2P;
+  }
 
   position.balanceOnPool = balanceOnPool;
-  position.balanceInP2P = balanceInP2P;
-  position._virtualP2P = virtualP2P;
-
   position.save();
 
   withdraw.position = position.id;
@@ -276,6 +254,9 @@ export function _handleWithdrawn(
     .toBigDecimal()
     .div(exponentToBigDecimal(inputToken.decimals))
     .times(market.inputTokenPriceUSD);
+  withdraw.isCollateral = isCollateral;
+  withdraw.gasPrice = event.transaction.gasPrice;
+  withdraw.gasLimit = event.transaction.gasLimit;
   withdraw.save();
 
   protocol.withdrawCount += 1;
@@ -507,6 +488,8 @@ export function _handleBorrowed(
     .toBigDecimal()
     .div(exponentToBigDecimal(inputToken.decimals))
     .times(market.inputTokenPriceUSD);
+  borrow.gasPrice = event.transaction.gasPrice;
+  borrow.gasLimit = event.transaction.gasLimit;
   borrow.save();
 
   // update metrics
@@ -556,12 +539,17 @@ export function _handleP2PIndexesUpdated(
   // The token price is updated in reserveUpdated event
   // calculate new revenue
   // New Interest = totalScaledSupply * (difference in liquidity index)
+  let totalSupplyOnPool = market._scaledSupplyOnPool;
+  if (market._scaledPoolCollateral)
+    totalSupplyOnPool = totalSupplyOnPool.plus(market._scaledPoolCollateral!);
+
   const supplyDeltaIndexes = poolSupplyIndex
     .minus(market._lastPoolSupplyIndex)
     .toBigDecimal()
     .div(exponentToBigDecimal(market._indexesOffset));
+
   const poolSupplyInterest = supplyDeltaIndexes
-    .times(market._scaledSupplyOnPool.toBigDecimal())
+    .times(totalSupplyOnPool.toBigDecimal())
     .div(exponentToBigDecimal(inputToken.decimals));
 
   const virtualSupplyInterest = supplyDeltaIndexes
@@ -772,6 +760,8 @@ export function _handleRepaid(
     .toBigDecimal()
     .div(exponentToBigDecimal(inputToken.decimals))
     .times(market.inputTokenPriceUSD);
+  repay.gasPrice = event.transaction.gasPrice;
+  repay.gasLimit = event.transaction.gasLimit;
   repay.save();
 
   protocol.repayCount += 1;
@@ -805,8 +795,6 @@ export function _handleRepaid(
 
 export function _handleReserveUpdate(params: ReserveUpdateParams): void {
   const market = getMarket(params.marketAddress);
-
-  updateProtocolPosition(params.protocol, market);
 
   // Update the total supply and borrow frequently by using pool updates
   const totalDepositBalanceUSD = market.totalSupplyOnPool
@@ -863,6 +851,8 @@ export function _handleReserveUpdate(params: ReserveUpdateParams): void {
   ];
 
   updateP2PRates(market);
+
+  updateProtocolPosition(params.protocol, market);
 
   market.save();
   return;

@@ -1,17 +1,14 @@
-import {
-  Address,
-  BigDecimal,
-  BigInt,
-  Bytes,
-  ethereum,
-} from "@graphprotocol/graph-ts";
+import { Address, BigDecimal, BigInt, Bytes, ethereum } from "@graphprotocol/graph-ts";
 
 export const BASE_UNITS = BigDecimal.fromString("10000");
 export const WAD = BigDecimal.fromString("1000000000000000000");
+export const WAD_BI = BigInt.fromString("1000000000000000000");
 
 export const RAY = BigDecimal.fromString("1000000000000000000000000000");
 
 export const RAY_BI = BigInt.fromString("1000000000000000000000000000");
+
+export const AAVE_V3_ORACLE_OFFSET = BigDecimal.fromString("100000000"); // 1e8
 
 export namespace ProtocolType {
   export const LENDING = "LENDING";
@@ -50,6 +47,10 @@ export namespace EventType {
   export const SUPPLIER_POSITION_UPDATE = 7;
 
   export const BORROWER_POSITION_UPDATE = 8;
+
+  export const DEPOSIT_COLLATERAL = 9;
+
+  export const WITHDRAW_COLLATERAL = 10;
 }
 
 export namespace ActivityType {
@@ -70,6 +71,8 @@ export const MORPHO_AAVE_V2_ADDRESS = Address.fromBytes(
 export const MORPHO_COMPOUND_ADDRESS = Address.fromBytes(
   Bytes.fromHexString("0x8888882f8f843896699869179fb6e4f7e3b58888")
 );
+
+export const MORPHO_AAVE_V3_ADDRESS = Address.fromBytes(Address.zero()); // TODO: add morpho-aave-v3 address once live
 
 export const C_ETH = Address.fromBytes(
   Bytes.fromHexString("0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5")
@@ -113,10 +116,7 @@ export const BLOCKS_PER_YEAR = BigInt.fromI32(2632320 as i32); // 7200 blocks pe
 ///// Utility Functions /////
 /////////////////////////////
 
-export function readValue<T>(
-  callResult: ethereum.CallResult<T>,
-  defaultValue: T
-): T {
+export function readValue<T>(callResult: ethereum.CallResult<T>, defaultValue: T): T {
   return callResult.reverted ? defaultValue : callResult.value;
 }
 

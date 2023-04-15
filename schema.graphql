@@ -544,12 +544,18 @@ type LendingProtocol implements Protocol @entity {
 
     ##### Morpho Specificity #####
 
-  defaultMaxGasForMatchingSupply: BigInt!
-  defaultMaxGasForMatchingBorrow: BigInt!
-  defaultMaxGasForMatchingWithdraw: BigInt!
-  defaultMaxGasForMatchingRepay: BigInt!
+  ## Morpho Compound and morpho aave v2 specific fields
+  defaultMaxGasForMatchingSupply: BigInt
+  defaultMaxGasForMatchingBorrow: BigInt
+  defaultMaxGasForMatchingWithdraw: BigInt
+  defaultMaxGasForMatchingRepay: BigInt
 
-  maxSortedUsers: BigInt!
+  maxSortedUsers: BigInt
+
+  ## Morpho Aave v3 specific fields
+  defaultMaxIterationsWithdraw: BigInt
+  defaultMaxIterationsRepay: BigInt
+
   owner: Bytes!
   oracle: Bytes
 }
@@ -1080,6 +1086,9 @@ type Market @entity {
   " The total amount borrowed peer-to-peer"
   totalBorrowInP2P: BigDecimal!
 
+  " The total amount of collateral on the underlying pool"
+  totalCollateralOnPool: BigDecimal!
+
   " The p2pSupplyAmount in scaled units"
   _p2pSupplyAmount: BigInt!
 
@@ -1104,6 +1113,9 @@ type Market @entity {
   " The aggregation of the scaled p2p borrow balances if the p2p balances was on pool"
   _virtualScaledBorrow: BigInt!
 
+  " The scaled balance on pool used as collateral"
+  _scaledPoolCollateral: BigInt
+
   " The poolSupplyAmount in scaled units"
   poolSupplyAmount: BigInt!
 
@@ -1118,6 +1130,12 @@ type Market @entity {
 
   " Whether the withdraw is paused or not"
   isWithdrawPaused: Boolean!
+
+  " Whether the withdraw collateral is paused or not"
+  isWithdrawCollateralPaused: Boolean
+
+  " Whether the supply collateral is paused or not"
+  isSupplyCollateralPaused: Boolean
 
   " Whether the repay is paused or not"
   isRepayPaused: Boolean!
@@ -1164,6 +1182,9 @@ type Market @entity {
 
   " The number of decimals of the rates and the indexes, WAD or RAY."
   _indexesOffset: Int!
+
+  " The idle supply on the Morpho contract"
+  _idleSupply: BigInt
 }
 
 #################################
@@ -1832,6 +1853,9 @@ type Deposit implements Event @entity(immutable: true) {
   " Nonce of the transaction that emitted this event "
   nonce: BigInt!
 
+  " Whether this deposit is used as collateral or not"
+  isCollateral: Boolean!
+
   " Event log index. For transactions that don't emit event, create arbitrary index starting from 0 "
   logIndex: Int!
 
@@ -1881,6 +1905,9 @@ type Withdraw implements Event @entity(immutable: true) {
 
   " Nonce of the transaction that emitted this event "
   nonce: BigInt!
+
+  " Whether this withdraw concerns collateral or not"
+  isCollateral: Boolean!
 
   " Event log index. For transactions that don't emit event, create arbitrary index starting from 0 "
   logIndex: Int!
@@ -2195,4 +2222,6 @@ type UnderlyingTokenMapping @entity {
   id: Bytes!
   aToken: Bytes!
   debtToken: Bytes!
+  aTokenV3: Bytes
+  variableDebtTokenV3: Bytes
 }

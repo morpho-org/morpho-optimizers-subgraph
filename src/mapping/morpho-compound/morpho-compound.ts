@@ -67,9 +67,7 @@ export function handleBorrowed(event: Borrowed): void {
   );
 }
 
-export function handleBorrowerPositionUpdated(
-  event: BorrowerPositionUpdated
-): void {
+export function handleBorrowerPositionUpdated(event: BorrowerPositionUpdated): void {
   _handleBorrowerPositionUpdated(
     event,
     event.params._poolToken,
@@ -98,17 +96,13 @@ export function handleP2PAmountsUpdated(event: P2PAmountsUpdated): void {
   market.save();
 }
 
-export function handleP2PBorrowDeltaUpdated(
-  event: P2PBorrowDeltaUpdated
-): void {
+export function handleP2PBorrowDeltaUpdated(event: P2PBorrowDeltaUpdated): void {
   const market = getMarket(event.params._poolToken);
   market._p2pBorrowDelta = event.params._p2pBorrowDelta;
   market.save();
 }
 
-export function handleP2PSupplyDeltaUpdated(
-  event: P2PSupplyDeltaUpdated
-): void {
+export function handleP2PSupplyDeltaUpdated(event: P2PSupplyDeltaUpdated): void {
   const market = getMarket(event.params._poolToken);
   market._p2pSupplyDelta = event.params._p2pSupplyDelta;
   market.save();
@@ -132,13 +126,12 @@ export function handleSupplied(event: Supplied): void {
     event.params._supplier,
     event.params._amount,
     event.params._balanceOnPool,
-    event.params._balanceInP2P
+    event.params._balanceInP2P,
+    false
   );
 }
 
-export function handleSupplierPositionUpdated(
-  event: SupplierPositionUpdated
-): void {
+export function handleSupplierPositionUpdated(event: SupplierPositionUpdated): void {
   _handleSupplierPositionUpdated(
     event,
     event.params._poolToken,
@@ -155,22 +148,17 @@ export function handleWithdrawn(event: Withdrawn): void {
     event.params._supplier,
     event.params._amount,
     event.params._balanceOnPool,
-    event.params._balanceInP2P
+    event.params._balanceInP2P,
+    false
   );
 }
 
-export function handleDefaultMaxGasForMatchingSet(
-  event: DefaultMaxGasForMatchingSet
-): void {
+export function handleDefaultMaxGasForMatchingSet(event: DefaultMaxGasForMatchingSet): void {
   const protocol = getOrInitLendingProtocol(event.address);
-  protocol.defaultMaxGasForMatchingWithdraw =
-    event.params._defaultMaxGasForMatching.withdraw;
-  protocol.defaultMaxGasForMatchingSupply =
-    event.params._defaultMaxGasForMatching.supply;
-  protocol.defaultMaxGasForMatchingBorrow =
-    event.params._defaultMaxGasForMatching.borrow;
-  protocol.defaultMaxGasForMatchingRepay =
-    event.params._defaultMaxGasForMatching.repay;
+  protocol.defaultMaxGasForMatchingWithdraw = event.params._defaultMaxGasForMatching.withdraw;
+  protocol.defaultMaxGasForMatchingSupply = event.params._defaultMaxGasForMatching.supply;
+  protocol.defaultMaxGasForMatchingBorrow = event.params._defaultMaxGasForMatching.borrow;
+  protocol.defaultMaxGasForMatchingRepay = event.params._defaultMaxGasForMatching.repay;
 }
 
 export function handleIsBorrowPausedSet(event: IsBorrowPausedSet): void {
@@ -185,17 +173,13 @@ export function handleIsDeprecatedSet(event: IsDeprecatedSet): void {
   market.save();
 }
 
-export function handleIsLiquidateBorrowPausedSet(
-  event: IsLiquidateBorrowPausedSet
-): void {
+export function handleIsLiquidateBorrowPausedSet(event: IsLiquidateBorrowPausedSet): void {
   const market = getMarket(event.params._poolToken);
   market.isLiquidateBorrowPaused = event.params._isPaused;
   market.save();
 }
 
-export function handleIsLiquidateCollateralPausedSet(
-  event: IsLiquidateCollateralPausedSet
-): void {
+export function handleIsLiquidateCollateralPausedSet(event: IsLiquidateCollateralPausedSet): void {
   const market = getMarket(event.params._poolToken);
   market.isLiquidateCollateralPaused = event.params._isPaused;
   market.save();
@@ -233,9 +217,7 @@ export function handleOwnershipTransferred(event: OwnershipTransferred): void {
 
 export function handleP2PIndexCursorSet(event: P2PIndexCursorSet): void {
   const market = getMarket(event.params._poolToken);
-  market.p2pIndexCursor = BigInt.fromI32(event.params._newValue)
-    .toBigDecimal()
-    .div(BASE_UNITS);
+  market.p2pIndexCursor = BigInt.fromI32(event.params._newValue).toBigDecimal().div(BASE_UNITS);
   market.save();
 }
 
@@ -245,9 +227,7 @@ export function handleP2PStatusSet(event: P2PStatusSet): void {
   market.save();
 }
 
-export function handlePartialPauseStatusSet(
-  event: PartialPauseStatusSet
-): void {
+export function handlePartialPauseStatusSet(event: PartialPauseStatusSet): void {
   const market = getMarket(event.params._poolToken);
   market.isSupplyPaused = event.params._newStatus;
   market.isBorrowPaused = event.params._newStatus;
@@ -267,9 +247,7 @@ export function handlePauseStatusSet(event: PauseStatusSet): void {
 
 export function handleReserveFactorSet(event: ReserveFactorSet): void {
   const market = getMarket(event.params._poolToken);
-  market.reserveFactor = BigInt.fromI32(event.params._newValue)
-    .toBigDecimal()
-    .div(BASE_UNITS);
+  market.reserveFactor = BigInt.fromI32(event.params._newValue).toBigDecimal().div(BASE_UNITS);
   market.save();
 }
 
@@ -277,6 +255,4 @@ export function handleReserveFeeClaimed(event: ReserveFeeClaimed): void {}
 
 export function handleRewardsClaimed(event: RewardsClaimed): void {}
 
-export function handleRewardsClaimedAndTraded(
-  event: RewardsClaimedAndTraded
-): void {}
+export function handleRewardsClaimedAndTraded(event: RewardsClaimedAndTraded): void {}

@@ -4,19 +4,22 @@ import { ERC20 } from "../../generated/MorphoAaveV2/ERC20";
 import { LendingPool } from "../../generated/MorphoAaveV2/LendingPool";
 import { LendingPoolAddressesProvider } from "../../generated/MorphoAaveV2/LendingPoolAddressesProvider";
 import { MorphoAaveV2 } from "../../generated/MorphoAaveV2/MorphoAaveV2";
+import { AaveV3AddressesProvider } from "../../generated/MorphoAaveV3/AaveV3AddressesProvider";
+import { MorphoAaveV3 } from "../../generated/MorphoAaveV3/MorphoAaveV3";
 import { MorphoCompound } from "../../generated/MorphoCompound/MorphoCompound";
+import { Token, LendingProtocol, Market, _MarketList } from "../../generated/schema";
 import {
-  Token,
-  LendingProtocol,
-  Market,
-  _MarketList,
-} from "../../generated/schema";
-import {
+  AaveV3Pool as AaveV3PoolTemplate,
+  AaveV3PoolConfigurator,
   Comptroller,
   LendingPool as LendingPoolTemplate,
 } from "../../generated/templates";
 import { LendingPoolConfigurator as LendingPoolConfiguratorTemplate } from "../../generated/templates";
-import { MORPHO_AAVE_V2_ADDRESS, MORPHO_COMPOUND_ADDRESS } from "../constants";
+import {
+  MORPHO_AAVE_V2_ADDRESS,
+  MORPHO_AAVE_V3_ADDRESS,
+  MORPHO_COMPOUND_ADDRESS,
+} from "../constants";
 
 export const getOrInitToken = (tokenAddress: Bytes): Token => {
   let token = Token.load(tokenAddress);
@@ -32,9 +35,7 @@ export const getOrInitToken = (tokenAddress: Bytes): Token => {
   return token;
 };
 
-export const getOrInitLendingProtocol = (
-  protocolAddress: Address
-): LendingProtocol => {
+export const getOrInitLendingProtocol = (protocolAddress: Address): LendingProtocol => {
   let protocol = LendingProtocol.load(protocolAddress);
   if (!protocol) {
     protocol = new LendingProtocol(protocolAddress);
@@ -43,12 +44,8 @@ export const getOrInitLendingProtocol = (
       const morpho = MorphoAaveV2.bind(protocolAddress);
       const lendingPool = LendingPool.bind(morpho.pool());
       LendingPoolTemplate.create(lendingPool._address);
-      const addressesProvider = LendingPoolAddressesProvider.bind(
-        morpho.addressesProvider()
-      );
-      LendingPoolConfiguratorTemplate.create(
-        addressesProvider.getLendingPoolConfigurator()
-      );
+      const addressesProvider = LendingPoolAddressesProvider.bind(morpho.addressesProvider());
+      LendingPoolConfiguratorTemplate.create(addressesProvider.getLendingPoolConfigurator());
       protocol.name = "Morpho Aave V2";
       protocol.slug = "morpho-aave-v2";
       protocol.schemaVersion = "0.0.5";
@@ -81,10 +78,26 @@ export const getOrInitLendingProtocol = (
       protocol.maxSortedUsers = morpho.maxSortedUsers();
 
       protocol.owner = morpho.owner();
+    } else if (protocolAddress.equals(MORPHO_AAVE_V3_ADDRESS)) {
+      const morpho = MorphoAaveV3.bind(protocolAddress);
+
+      AaveV3PoolTemplate.create(morpho.pool());
+      const addressesProvider = AaveV3AddressesProvider.bind(morpho.addressesProvider());
+      AaveV3PoolConfigurator.create(addressesProvider.getPoolConfigurator());
+
+      protocol.name = "Morpho Aave v3";
+      protocol.slug = "morpho-aave-v3";
+      protocol.schemaVersion = "0.0.5";
+      protocol.subgraphVersion = "1.0.0";
+      protocol.methodologyVersion = "1.0.0";
+      const defaultIterations = morpho.defaultIterations();
+
+      protocol.defaultMaxIterationsRepay = defaultIterations.repay;
+      protocol.defaultMaxIterationsWithdraw = defaultIterations.withdraw;
+
+      protocol.owner = morpho.owner();
     } else {
-      log.critical("Unknown protocol address: {}", [
-        protocolAddress.toHexString(),
-      ]);
+      log.critical("Unknown protocol address: {}", [protocolAddress.toHexString()]);
       return new LendingProtocol(Bytes.fromHexString("0x0"));
     }
     protocol.protocol = "Morpho";
