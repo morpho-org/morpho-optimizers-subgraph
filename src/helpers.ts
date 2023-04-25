@@ -612,8 +612,6 @@ export function subtractPosition(
     position.hashClosed = event.transaction.hash;
     position.blockNumberClosed = event.block.number;
     position.timestampClosed = event.block.timestamp;
-    position.balanceOnPool = BigInt.zero();
-    position.balanceInP2P = BigInt.zero();
     position.save();
 
     //
@@ -850,8 +848,14 @@ function snapshotPosition(position: Position, event: ethereum.Event): void {
   const p2pIndex =
     position.side === PositionSide.LENDER ? market._p2pSupplyIndex : market._p2pBorrowIndex;
 
-  const balanceOnPool = position.balanceOnPool.times(poolIndex).div(RAY_BI);
-  const balanceInP2P = position.balanceInP2P.times(p2pIndex).div(RAY_BI);
+  let balanceOnPool = BigInt.zero();
+  let balanceInP2P = BigInt.zero();
+
+  if (position.balance.gt(BigInt.zero())) {
+    balanceOnPool = position.balanceOnPool.times(poolIndex).div(RAY_BI);
+    balanceInP2P = position.balanceInP2P.times(p2pIndex).div(RAY_BI);
+  }
+
   const totalBalance = balanceOnPool.plus(balanceInP2P);
   snapshot.hash = event.transaction.hash;
   snapshot.logIndex = event.logIndex.toI32();
