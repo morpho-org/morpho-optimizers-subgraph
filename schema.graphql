@@ -1087,7 +1087,7 @@ type Market @entity {
   totalBorrowInP2P: BigDecimal!
 
   " The total amount of collateral on the underlying pool"
-  totalCollateralOnPool: BigDecimal!
+  totalCollateralOnPool: BigDecimal
 
   " The p2pSupplyAmount in scaled units"
   _p2pSupplyAmount: BigInt!

@@ -242,9 +242,9 @@ dataSources:
     name: MorphoAaveV3
     network: mainnet
     source:
-      address: "0000000000000000000000000000000000000000"
+      address: "0x333F4448435Ba2D05e2B2CCd15dD50eA36839333"
       abi: MorphoAaveV3
-      startBlock: 0
+      startBlock: 17115225
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
