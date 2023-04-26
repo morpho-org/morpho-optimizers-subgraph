@@ -62,8 +62,6 @@ export namespace ActivityType {
 ///// Addresses /////
 /////////////////////
 
-export const USDC_TOKEN_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"; // used for Mainnet pricing
-
 export const MORPHO_AAVE_V2_ADDRESS = Address.fromBytes(
   Bytes.fromHexString("0x777777c9898d384f785ee44acfe945efdff5f3e0")
 );
@@ -72,7 +70,9 @@ export const MORPHO_COMPOUND_ADDRESS = Address.fromBytes(
   Bytes.fromHexString("0x8888882f8f843896699869179fb6e4f7e3b58888")
 );
 
-export const MORPHO_AAVE_V3_ADDRESS = Address.fromBytes(Address.zero()); // TODO: add morpho-aave-v3 address once live
+export const MORPHO_AAVE_V3_ADDRESS = Address.fromBytes(
+  Bytes.fromHexString("0x333F4448435Ba2D05e2B2CCd15dD50eA36839333")
+);
 
 export const C_ETH = Address.fromBytes(
   Bytes.fromHexString("0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5")
