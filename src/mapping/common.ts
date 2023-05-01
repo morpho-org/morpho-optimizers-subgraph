@@ -201,7 +201,7 @@ export function _handleWithdrawn(
     account,
     balance,
     PositionSide.LENDER,
-    EventType.WITHDRAW,
+    isCollateral ? EventType.WITHDRAW_COLLATERAL : EventType.WITHDRAW,
     event
   );
 
