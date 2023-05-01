@@ -1,17 +1,10 @@
-import { Address, BigInt, Bytes, ethereum } from "@graphprotocol/graph-ts";
+import { BigInt, Bytes, ethereum } from "@graphprotocol/graph-ts";
 
-import {
-  LendingProtocol,
-  UnderlyingTokenMapping,
-} from "../../../generated/schema";
+import { LendingProtocol, Market, UnderlyingTokenMapping } from "../../../generated/schema";
 import { ReserveDataUpdated } from "../../../generated/templates/LendingPool/LendingPool";
 import { MORPHO_AAVE_V2_ADDRESS } from "../../constants";
 import { fetchAssetPrice } from "../../utils/aaveV2/fetchers";
-import {
-  getMarket,
-  getOrInitLendingProtocol,
-  getOrInitToken,
-} from "../../utils/initializers";
+import { getOrInitLendingProtocol, getOrInitToken } from "../../utils/initializers";
 import { _handleReserveUpdate } from "../common";
 
 export class ReserveUpdateParams {
@@ -35,9 +28,9 @@ export class ReserveUpdateParams {
 export function handleReserveDataUpdated(event: ReserveDataUpdated): void {
   const tokenMapping = UnderlyingTokenMapping.load(event.params.reserve);
   if (!tokenMapping) return; // Not a Morpho market
-  const aTokenAddress = Address.fromBytes(tokenMapping.aToken);
+  const market = Market.load(tokenMapping.aToken);
+  if (!market) return; // Not a Morpho market
 
-  const market = getMarket(aTokenAddress);
   const inputToken = getOrInitToken(event.params.reserve);
   const protocol = getOrInitLendingProtocol(MORPHO_AAVE_V2_ADDRESS);
 
