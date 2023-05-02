@@ -1,4 +1,4 @@
-import { BigDecimal, BigInt } from "@graphprotocol/graph-ts";
+import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 
 import { ERC20 } from "../../../generated/MorphoAaveV2/ERC20";
 import { AaveV3AddressesProvider } from "../../../generated/MorphoAaveV3/AaveV3AddressesProvider";
@@ -326,6 +326,8 @@ export function handleMarketCreated(event: MarketCreated): void {
   }
   underlyingMapping.variableDebtTokenV3 = morphoMarket.variableDebtToken;
   underlyingMapping.aTokenV3 = morphoMarket.aToken;
+  underlyingMapping.aToken = Address.zero();
+  underlyingMapping.debtToken = Address.zero();
   underlyingMapping.save();
 
   market.inputTokenBalance = underlying.balanceOf(morphoMarket.aToken);

@@ -71,7 +71,7 @@ export const MORPHO_COMPOUND_ADDRESS = Address.fromBytes(
 );
 
 export const MORPHO_AAVE_V3_ADDRESS = Address.fromBytes(
-  Bytes.fromHexString("0x333F4448435Ba2D05e2B2CCd15dD50eA36839333")
+  Bytes.fromHexString("0x33333aea097c193e66081e930c33020272b33333")
 );
 
 export const C_ETH = Address.fromBytes(
