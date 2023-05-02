@@ -123,7 +123,7 @@ export function handleSupplied(event: Supplied): void {
   _handleSupplied(
     event,
     event.params._poolToken,
-    event.params._supplier,
+    event.params._onBehalf,
     event.params._amount,
     event.params._balanceOnPool,
     event.params._balanceInP2P,
