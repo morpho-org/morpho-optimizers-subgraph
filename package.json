@@ -1,8 +1,8 @@
 {
-  "name": "@morpho-labs/morpho-subgraphs",
+  "name": "@morpho-association/morpho-subgraphs",
   "description": "Morpho Subgraphs for The Graph Protocol",
   "license": "MIT",
-  "author": "Morpho Labs",
+  "author": "Morpho Association",
   "contributors": [
     {
       "name": "Julien Devatom",
@@ -10,7 +10,6 @@
       "url": "https://github.com/julien-devatom"
     }
   ],
-
   "repository": {
     "type": "git",
     "url": "git+https://github.com/morpho-association/morpho-subgraphs.git"
@@ -25,10 +24,11 @@
   "scripts": {
     "graph:codegen": "graph codegen",
     "graph:build": "graph build",
-    "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ morpho-labs/morpho-subgraphs",
-    "create-local": "graph create --node http://localhost:8020/ morpho-labs/morpho-subgraphs",
-    "remove-local": "graph remove --node http://localhost:8020/ morpho-labs/morpho-subgraphs",
-    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 morpho-labs/morpho-subgraphs",
+    "graph:deploy:hs": "graph deploy --product hosted-service morpho-association/morpho-subgraphs",
+    "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ morpho-association/morpho-subgraphs",
+    "create-local": "graph create --node http://localhost:8020/ morpho-association/morpho-subgraphs",
+    "remove-local": "graph remove --node http://localhost:8020/ morpho-association/morpho-subgraphs",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 morpho-association/morpho-subgraphs",
     "test": "graph test",
     "postinstall": "husky install",
     "lint": "eslint ./src --fix"
