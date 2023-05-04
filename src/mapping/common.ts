@@ -354,7 +354,7 @@ export function _handleLiquidated(
   const counterIDDebt = account.id
     .toHexString()
     .concat("-")
-    .concat(collateralMarket.id.toHexString())
+    .concat(debtMarket.id.toHexString())
     .concat("-")
     .concat(PositionSide.BORROWER);
 
