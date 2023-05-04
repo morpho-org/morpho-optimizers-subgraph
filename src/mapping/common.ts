@@ -299,9 +299,9 @@ export function _handleLiquidated(
   amountSeized: BigInt,
   amountRepaid: BigInt
 ): void {
-  // collateral market
-  const market = getMarket(collateralAddress);
-  const inputToken = getOrInitToken(market.inputToken);
+  const collateralMarket = getMarket(collateralAddress);
+  const debtMarket = getMarket(debtAddress);
+  const inputToken = getOrInitToken(collateralMarket.inputToken);
   const protocol = getOrInitLendingProtocol(event.address);
 
   // create liquidate entity
@@ -354,7 +354,7 @@ export function _handleLiquidated(
   const counterIDDebt = account.id
     .toHexString()
     .concat("-")
-    .concat(market.id.toHexString())
+    .concat(collateralMarket.id.toHexString())
     .concat("-")
     .concat(PositionSide.BORROWER);
 
@@ -395,7 +395,7 @@ export function _handleLiquidated(
   let counterIDCollateral = account.id
     .toHexString()
     .concat("-")
-    .concat(market.id.toHexString())
+    .concat(collateralMarket.id.toHexString())
     .concat("-")
     .concat(PositionSide.LENDER);
   if (event.address.equals(MORPHO_AAVE_V3_ADDRESS)) counterIDCollateral += "-collateral"; // liquidate collateral position on ma3
@@ -443,7 +443,7 @@ export function _handleLiquidated(
   liquidate.positions = positions;
   liquidate.liquidator = liquidator;
   liquidate.liquidatee = liquidated;
-  liquidate.market = market.id;
+  liquidate.market = collateralMarket.id;
   liquidate.hash = event.transaction.hash;
   liquidate.nonce = event.transaction.nonce;
   liquidate.logIndex = event.logIndex.toI32();
@@ -452,7 +452,7 @@ export function _handleLiquidated(
   liquidate.amountUSD = amountSeized
     .toBigDecimal()
     .div(exponentToBigDecimal(inputToken.decimals))
-    .times(market.inputTokenPriceUSD);
+    .times(collateralMarket.inputTokenPriceUSD);
   liquidate.profitUSD = liquidate.amountUSD.minus(
     amountRepaid
       .toBigDecimal()
@@ -464,9 +464,11 @@ export function _handleLiquidated(
   protocol.cumulativeLiquidateUSD = protocol.cumulativeLiquidateUSD.plus(liquidate.amountUSD);
   protocol.liquidationCount += 1;
   protocol.save();
-  market.cumulativeLiquidateUSD = market.cumulativeLiquidateUSD.plus(liquidate.amountUSD);
-  market.liquidationCount += 1;
-  market.save();
+  collateralMarket.cumulativeLiquidateUSD = collateralMarket.cumulativeLiquidateUSD.plus(
+    liquidate.amountUSD
+  );
+  collateralMarket.liquidationCount += 1;
+  collateralMarket.save();
 
   // update usage metrics
   snapshotUsage(
@@ -489,7 +491,7 @@ export function _handleLiquidated(
   // udpate market daily / hourly snapshots / financialSnapshots
   updateSnapshots(
     protocol,
-    market,
+    collateralMarket,
     liquidate.amountUSD,
     liquidate.amount,
     EventType.LIQUIDATOR,
