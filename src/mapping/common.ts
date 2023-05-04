@@ -393,24 +393,24 @@ export function _handleLiquidated(
     .concat(PositionSide.LENDER);
   if (event.address.equals(MORPHO_AAVE_V3_ADDRESS)) counterIDCollateral += "-collateral"; // liquidate collateral position on ma3
 
-  const positiopositionCollateral = _PositionCounter.load(counterIDCollateral);
-  if (!positiopositionCollateral) {
+  const counterPositionCollateral = _PositionCounter.load(counterIDCollateral);
+  if (!counterPositionCollateral) {
     log.critical("[Liquidation] no position counter found for {}", [counterIDCollateral]);
     return;
   }
-  const positionCollateralID = positiopositionCollateral.id
+  const positionCollateralID = counterPositionCollateral.id
     .concat("-")
-    .concat(positiopositionCollateral.nextCount.toString());
+    .concat(counterPositionCollateral.nextCount.toString());
   let positionCollateral = Position.load(positionCollateralID);
   if (!positionCollateral) {
     // That means that the liquidation has closed the position, so let's retrieve the last one
-    if (positiopositionCollateral.nextCount === 0) {
+    if (counterPositionCollateral.nextCount === 0) {
       log.critical("[Liquidation] counter is zero for position {}", [positionCollateralID]);
       return;
     }
-    const positionID = positiopositionCollateral.id
+    const positionID = counterPositionCollateral.id
       .concat("-")
-      .concat((positiopositionCollateral.nextCount - 1).toString());
+      .concat((counterPositionCollateral.nextCount - 1).toString());
     positionCollateral = Position.load(positionID);
     if (!positionCollateral) {
       log.critical("[Liquidation] no position found for {}", [positionID]);
