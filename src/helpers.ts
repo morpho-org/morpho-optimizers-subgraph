@@ -971,12 +971,17 @@ export function updateProtocolPosition(protocol: LendingProtocol, market: Market
 }
 
 export function updateP2PRates(market: Market): void {
-  const supplyRate = market._poolSupplyRate
-    .toBigDecimal()
-    .div(exponentToBigDecimal(market._indexesOffset));
-  const borrowRate = market._poolBorrowRate
-    .toBigDecimal()
-    .div(exponentToBigDecimal(market._indexesOffset));
+  let proportionIdle = BigInt.zero();
+  const offset = exponentToBigInt(market._indexesOffset);
+  const offsetBD = exponentToBigDecimal(market._indexesOffset);
+  if (market._idleSupply && market._idleSupply!.gt(BigInt.zero())) {
+    const totalP2PSupplied = market._p2pSupplyAmount.times(market._p2pSupplyIndex).div(offset);
+    proportionIdle = market._idleSupply!.times(offset).div(totalP2PSupplied);
+    if (proportionIdle.gt(offset)) proportionIdle = offset;
+  }
+
+  const supplyRate = market._poolSupplyRate.toBigDecimal().div(offsetBD);
+  const borrowRate = market._poolBorrowRate.toBigDecimal().div(offsetBD);
   let midRate: BigDecimal;
 
   if (borrowRate.lt(supplyRate)) midRate = borrowRate;
@@ -995,30 +1000,21 @@ export function updateP2PRates(market: Market): void {
   if (market._p2pSupplyDelta.gt(BigInt.zero()) && market._p2pSupplyAmount.gt(BigInt.zero())) {
     let shareOfTheDelta = wadToRay(market._p2pSupplyDelta)
       .times(market._reserveSupplyIndex)
-      .div(
-        wadToRay(market._p2pSupplyAmount)
-          .times(market._p2pSupplyIndex)
-          .div(exponentToBigInt(market._indexesOffset))
-      );
-    if (shareOfTheDelta.gt(exponentToBigInt(market._indexesOffset)))
-      shareOfTheDelta = exponentToBigInt(market._indexesOffset);
-    const sotd = shareOfTheDelta.toBigDecimal().div(exponentToBigDecimal(market._indexesOffset));
+      .div(wadToRay(market._p2pSupplyAmount).times(market._p2pSupplyIndex).div(offset));
+    if (shareOfTheDelta.gt(offset.minus(proportionIdle))) shareOfTheDelta = offset;
+    const sotd = shareOfTheDelta.toBigDecimal().div(offsetBD);
+    const idleBD = proportionIdle.toBigDecimal().div(offsetBD);
     p2pSupplyRateWithDelta = p2pSupplyRateWithFees
-      .times(BIGDECIMAL_ONE.minus(sotd))
-      .plus(supplyRate.times(sotd));
+      .times(BIGDECIMAL_ONE.minus(sotd).minus(idleBD))
+      .plus(supplyRate.times(sotd).plus(idleBD));
   }
   let p2pBorrowRateWithDelta = p2pBorrowRateWithFees;
   if (market._p2pBorrowDelta.gt(BigInt.zero()) && market._p2pBorrowAmount.gt(BigInt.zero())) {
     let shareOfTheDelta = wadToRay(market._p2pBorrowDelta)
       .times(market._reserveBorrowIndex)
-      .div(
-        wadToRay(market._p2pBorrowAmount)
-          .times(market._p2pBorrowIndex)
-          .div(exponentToBigInt(market._indexesOffset))
-      );
-    if (shareOfTheDelta.gt(exponentToBigInt(market._indexesOffset)))
-      shareOfTheDelta = exponentToBigInt(market._indexesOffset);
-    const sotd = shareOfTheDelta.toBigDecimal().div(exponentToBigDecimal(market._indexesOffset));
+      .div(wadToRay(market._p2pBorrowAmount).times(market._p2pBorrowIndex).div(offset));
+    if (shareOfTheDelta.gt(offset)) shareOfTheDelta = offset;
+    const sotd = shareOfTheDelta.toBigDecimal().div(offsetBD);
     p2pBorrowRateWithDelta = p2pBorrowRateWithFees
       .times(BIGDECIMAL_ONE.minus(sotd))
       .plus(borrowRate.times(sotd));
