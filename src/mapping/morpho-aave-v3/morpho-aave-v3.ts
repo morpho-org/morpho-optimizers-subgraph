@@ -1,10 +1,10 @@
 import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 
-import { ERC20 } from "../../../generated/MorphoAaveV2/ERC20";
-import { AaveV3AddressesProvider } from "../../../generated/MorphoAaveV3/AaveV3AddressesProvider";
-import { AaveV3DataProvider } from "../../../generated/MorphoAaveV3/AaveV3DataProvider";
-import { AaveV3Pool } from "../../../generated/MorphoAaveV3/AaveV3Pool";
-import { AaveV3PriceOracle } from "../../../generated/MorphoAaveV3/AaveV3PriceOracle";
+import { ERC20 } from "../../../generated/morpho-v1/MorphoAaveV2/ERC20";
+import { AaveV3AddressesProvider } from "../../../generated/morpho-v1/MorphoAaveV3/AaveV3AddressesProvider";
+import { AaveV3DataProvider } from "../../../generated/morpho-v1/MorphoAaveV3/AaveV3DataProvider";
+import { AaveV3Pool } from "../../../generated/morpho-v1/MorphoAaveV3/AaveV3Pool";
+import { AaveV3PriceOracle } from "../../../generated/morpho-v1/MorphoAaveV3/AaveV3PriceOracle";
 import {
   MorphoAaveV3,
   Initialized,
@@ -48,8 +48,8 @@ import {
   IdleSupplyUpdated,
   ReserveFeeClaimed,
   UserNonceIncremented,
-} from "../../../generated/MorphoAaveV3/MorphoAaveV3";
-import { Market, UnderlyingTokenMapping } from "../../../generated/schema";
+} from "../../../generated/morpho-v1/MorphoAaveV3/MorphoAaveV3";
+import { Market, UnderlyingTokenMapping } from "../../../generated/morpho-v1/schema";
 import { AAVE_V3_ORACLE_OFFSET, BASE_UNITS, RAY_BI } from "../../constants";
 import {
   getMarket,

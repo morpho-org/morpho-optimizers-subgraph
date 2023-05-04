@@ -1,7 +1,11 @@
 import { BigInt, Bytes, ethereum } from "@graphprotocol/graph-ts";
 
-import { LendingProtocol, Market, UnderlyingTokenMapping } from "../../../generated/schema";
-import { ReserveDataUpdated } from "../../../generated/templates/LendingPool/LendingPool";
+import {
+  LendingProtocol,
+  Market,
+  UnderlyingTokenMapping,
+} from "../../../generated/morpho-v1/schema";
+import { ReserveDataUpdated } from "../../../generated/morpho-v1/templates/LendingPool/LendingPool";
 import { MORPHO_AAVE_V2_ADDRESS } from "../../constants";
 import { fetchAssetPrice } from "../../utils/aaveV2/fetchers";
 import { getOrInitLendingProtocol, getOrInitToken } from "../../utils/initializers";

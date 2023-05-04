@@ -1,6 +1,6 @@
 import { log } from "@graphprotocol/graph-ts";
 
-import { Market } from "../../../generated/schema";
+import { Market } from "../../../generated/morpho-v1/schema";
 import {
   ATokenUpgraded,
   BorrowCapChanged,
@@ -28,7 +28,7 @@ import {
   SupplyCapChanged,
   UnbackedMintCapChanged,
   VariableDebtTokenUpgraded,
-} from "../../../generated/templates/AaveV3PoolConfigurator/AaveV3PoolConfigurator";
+} from "../../../generated/morpho-v1/templates/AaveV3PoolConfigurator/AaveV3PoolConfigurator";
 
 export function handleATokenUpgraded(event: ATokenUpgraded): void {}
 

@@ -45,25 +45,25 @@ dataSources:
         - ReserveFeeClaimed
       abis:
         - name: MorphoAaveV2
-          file: ./abis/MorphoAaveV2.json
+          file: ../../abis/MorphoAaveV2.json
         - name: ERC20
-          file: ./abis/ERC20.json
+          file: ../../abis/ERC20.json
         - name: AToken
-          file: ./abis/aave/AToken.json
+          file: ../../abis/aave/AToken.json
         - name: DebtToken
-          file: ./abis/aave/DebtToken.json
+          file: ../../abis/aave/DebtToken.json
         - name: LendingPool
-          file: ./abis/aave/LendingPool.json
+          file: ../../abis/aave/LendingPool.json
         - name: LendingPoolAddressesProvider
-          file: ./abis/aave/LendingPoolAddressesProvider.json
+          file: ../../abis/aave/LendingPoolAddressesProvider.json
         - name: LendingPoolConfigurator
-          file: ./abis/aave/LendingPoolConfigurator.json
+          file: ../../abis/aave/LendingPoolConfigurator.json
         - name: PriceOracle
-          file: ./abis/aave/PriceOracle.json
+          file: ../../abis/aave/PriceOracle.json
         - name: ProtocolDataProvider
-          file: ./abis/aave/ProtocolDataProvider.json
+          file: ../../abis/aave/ProtocolDataProvider.json
         - name: ChainlinkPriceFeed
-          file: ./abis/chainlink/PriceFeed.json
+          file: ../../abis/chainlink/PriceFeed.json
       eventHandlers:
         - event: Borrowed(indexed address,indexed address,uint256,uint256,uint256)
           handler: handleBorrowed
@@ -121,7 +121,7 @@ dataSources:
           handler: handleReserveFactorSet
         - event: ReserveFeeClaimed(indexed address,uint256)
           handler: handleReserveFeeClaimed
-      file: ./src/mapping/morpho-aave/morpho-aave-v2.ts
+      file: ../../src/mapping/morpho-aave/morpho-aave-v2.ts
 
   - kind: ethereum
     name: MorphoCompound
@@ -167,15 +167,15 @@ dataSources:
         - RewardsClaimedAndTraded
       abis:
         - name: MorphoCompound
-          file: ./abis/compound/MorphoCompound.json
+          file: ../../abis/compound/MorphoCompound.json
         - name: ERC20
-          file: ./abis/ERC20.json
+          file: ../../abis/ERC20.json
         - name: CToken
-          file: ./abis/compound/CToken.json
+          file: ../../abis/compound/CToken.json
         - name: Comptroller
-          file: ./abis/compound/Comptroller.json
+          file: ../../abis/compound/Comptroller.json
         - name: CompoundOracle
-          file: ./abis/compound/CompoundOracle.json
+          file: ../../abis/compound/CompoundOracle.json
       eventHandlers:
         - event: P2PIndexesUpdated(indexed address,uint256,uint256,uint256,uint256)
           handler: handleP2PIndexesUpdated
@@ -237,7 +237,7 @@ dataSources:
           handler: handleRewardsClaimed
         - event: RewardsClaimedAndTraded(indexed address,uint256)
           handler: handleRewardsClaimedAndTraded
-      file: ./src/mapping/morpho-compound/morpho-compound.ts
+      file: ../../src/mapping/morpho-compound/morpho-compound.ts
   - kind: ethereum
     name: MorphoAaveV3
     network: mainnet
@@ -293,17 +293,17 @@ dataSources:
         - UserNonceIncremented
       abis:
         - name: MorphoAaveV3
-          file: ./abis/aave-v3/MorphoAaveV3.json
+          file: ../../abis/aave-v3/MorphoAaveV3.json
         - name: AaveV3Pool
-          file: ./abis/aave-v3/AaveV3Pool.json
+          file: ../../abis/aave-v3/AaveV3Pool.json
         - name: AaveV3AddressesProvider
-          file: ./abis/aave-v3/AaveV3AddressesProvider.json
+          file: ../../abis/aave-v3/AaveV3AddressesProvider.json
         - name: AaveV3DataProvider
-          file: ./abis/aave-v3/AaveV3DataProvider.json
+          file: ../../abis/aave-v3/AaveV3DataProvider.json
         - name: AaveV3PriceOracle
-          file: ./abis/aave-v3/AaveV3PriceOracle.json
+          file: ../../abis/aave-v3/AaveV3PriceOracle.json
         - name: ERC20
-          file: ./abis/ERC20.json
+          file: ../../abis/ERC20.json
       eventHandlers:
         - event: Initialized(uint8)
           handler: handleInitialized
@@ -387,7 +387,7 @@ dataSources:
           handler: handleReserveFeeClaimed
         - event: UserNonceIncremented(indexed address,indexed address,uint256)
           handler: handleUserNonceIncremented
-      file: ./src/mapping/morpho-aave-v3/morpho-aave-v3.ts
+      file: ../../src/mapping/morpho-aave-v3/morpho-aave-v3.ts
 templates:
   - kind: ethereum
     name: LendingPool
@@ -402,29 +402,29 @@ templates:
         - ReserveDataUpdated
       abis:
         - name: MorphoAaveV2
-          file: ./abis/MorphoAaveV2.json
+          file: ../../abis/MorphoAaveV2.json
         - name: ERC20
-          file: ./abis/ERC20.json
+          file: ../../abis/ERC20.json
         - name: AToken
-          file: ./abis/aave/AToken.json
+          file: ../../abis/aave/AToken.json
         - name: DebtToken
-          file: ./abis/aave/DebtToken.json
+          file: ../../abis/aave/DebtToken.json
         - name: LendingPool
-          file: ./abis/aave/LendingPool.json
+          file: ../../abis/aave/LendingPool.json
         - name: LendingPoolAddressesProvider
-          file: ./abis/aave/LendingPoolAddressesProvider.json
+          file: ../../abis/aave/LendingPoolAddressesProvider.json
         - name: LendingPoolConfigurator
-          file: ./abis/aave/LendingPoolConfigurator.json
+          file: ../../abis/aave/LendingPoolConfigurator.json
         - name: PriceOracle
-          file: ./abis/aave/PriceOracle.json
+          file: ../../abis/aave/PriceOracle.json
         - name: ProtocolDataProvider
-          file: ./abis/aave/ProtocolDataProvider.json
+          file: ../../abis/aave/ProtocolDataProvider.json
         - name: ChainlinkPriceFeed
-          file: ./abis/chainlink/PriceFeed.json
+          file: ../../abis/chainlink/PriceFeed.json
       eventHandlers:
         - event: ReserveDataUpdated(indexed address,uint256,uint256,uint256,uint256,uint256)
           handler: handleReserveDataUpdated
-      file: ./src/mapping/morpho-aave/lending-pool.ts
+      file: ../../src/mapping/morpho-aave/lending-pool.ts
 
   - kind: ethereum
     name: LendingPoolConfigurator
@@ -446,11 +446,11 @@ templates:
         - ReserveUnfrozen
       abis:
         - name: LendingPoolConfigurator
-          file: ./abis/aave/LendingPoolConfigurator.json
+          file: ../../abis/aave/LendingPoolConfigurator.json
       eventHandlers:
         - event: CollateralConfigurationChanged(indexed address,uint256,uint256,uint256)
           handler: handleCollateralConfigurationChanged
-      file: ./src/mapping/morpho-aave/lending-pool-configurator.ts
+      file: ../../src/mapping/morpho-aave/lending-pool-configurator.ts
   - kind: ethereum
     name: CToken
     network: mainnet
@@ -467,21 +467,21 @@ templates:
         - ReservesReduced
       abis:
         - name: MorphoCompound
-          file: ./abis/compound/MorphoCompound.json
+          file: ../../abis/compound/MorphoCompound.json
         - name: ERC20
-          file: ./abis/ERC20.json
+          file: ../../abis/ERC20.json
         - name: CToken
-          file: ./abis/compound/CToken.json
+          file: ../../abis/compound/CToken.json
         - name: Comptroller
-          file: ./abis/compound/Comptroller.json
+          file: ../../abis/compound/Comptroller.json
         - name: CompoundOracle
-          file: ./abis/compound/CompoundOracle.json
+          file: ../../abis/compound/CompoundOracle.json
       eventHandlers:
         - event: AccrueInterest(uint256,uint256,uint256)
           handler: handleAccrueInterestV1
         - event: AccrueInterest(uint256,uint256,uint256,uint256)
           handler: handleAccrueInterestV2
-      file: ./src/mapping/morpho-compound/c-token.ts
+      file: ../../src/mapping/morpho-compound/c-token.ts
   - kind: ethereum
     name: Comptroller
     network: mainnet
@@ -499,15 +499,15 @@ templates:
         - NewPriceOracle
       abis:
         - name: MorphoCompound
-          file: ./abis/compound/MorphoCompound.json
+          file: ../../abis/compound/MorphoCompound.json
         - name: ERC20
-          file: ./abis/ERC20.json
+          file: ../../abis/ERC20.json
         - name: CToken
-          file: ./abis/compound/CToken.json
+          file: ../../abis/compound/CToken.json
         - name: Comptroller
-          file: ./abis/compound/Comptroller.json
+          file: ../../abis/compound/Comptroller.json
         - name: CompoundOracle
-          file: ./abis/compound/CompoundOracle.json
+          file: ../../abis/compound/CompoundOracle.json
       eventHandlers:
 #        - event: CompBorrowSpeedUpdated(indexed address,uint256)
 #          handler: handleCompBorrowSpeedUpdated
@@ -521,7 +521,7 @@ templates:
           handler: handleNewCollateralFactor
         - event: NewPriceOracle(address,address)
           handler: handleNewPriceOracle
-      file: ./src/mapping/morpho-compound/comptroller.ts
+      file: ../../src/mapping/morpho-compound/comptroller.ts
   - kind: ethereum
     name: CompoundOracle
     network: mainnet
@@ -535,11 +535,11 @@ templates:
         - PriceUpdated
       abis:
         - name: CompoundOracle
-          file: ./abis/compound/CompoundOracle.json
+          file: ../../abis/compound/CompoundOracle.json
       eventHandlers:
         - event: PriceUpdated(indexed bytes32,uint256)
           handler: handlePriceUpdated
-      file: ./src/mapping/morpho-compound/oracle.ts
+      file: ../../src/mapping/morpho-compound/oracle.ts
   - kind: ethereum
     name: AaveV3Pool
     network: mainnet
@@ -562,7 +562,7 @@ templates:
         - ReserveDataUpdated
       abis:
         - name: AaveV3Pool
-          file: ./abis/aave-v3/AaveV3Pool.json
+          file: ../../abis/aave-v3/AaveV3Pool.json
       eventHandlers:
         - event: BackUnbacked(indexed address,indexed address,uint256,uint256)
           handler: handleBackUnbacked
@@ -596,7 +596,7 @@ templates:
           handler: handleUserEModeSet
         - event: Withdraw(indexed address,indexed address,indexed address,uint256)
           handler: handleWithdraw
-      file: ./src/mapping/morpho-aave-v3/aave-v3-pool.ts
+      file: ../../src/mapping/morpho-aave-v3/aave-v3-pool.ts
   - kind: ethereum
     name: AaveV3PoolConfigurator
     network: mainnet
@@ -635,7 +635,7 @@ templates:
         - VariableDebtTokenUpgraded
       abis:
         - name: AaveV3PoolConfigurator
-          file: ./abis/aave-v3/AaveV3PoolConfigurator.json
+          file: ../../abis/aave-v3/AaveV3PoolConfigurator.json
       eventHandlers:
         - event: ATokenUpgraded(indexed address,indexed address,indexed address)
           handler: handleATokenUpgraded
@@ -689,4 +689,4 @@ templates:
           handler: handleUnbackedMintCapChanged
         - event: VariableDebtTokenUpgraded(indexed address,indexed address,indexed address)
           handler: handleVariableDebtTokenUpgraded
-      file: ./src/mapping/morpho-aave-v3/aave-v3-pool-configurator.ts
+      file: ../../src/mapping/morpho-aave-v3/aave-v3-pool-configurator.ts

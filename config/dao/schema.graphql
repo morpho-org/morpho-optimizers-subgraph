@@ -1,0 +1,20 @@
+type Metrics @entity {
+  "id = 1"
+  id: ID!
+  nbHolders: BigInt!
+}
+
+type Account @entity {
+  id: ID!
+  address: Bytes!
+  balance: BigInt!
+  claimed: BigInt!
+  minted: BigInt!
+  roles: [Role!]!
+}
+
+type Role @entity {
+  id: ID!
+  capabilities: [Bytes!]!
+  users: [Account!]! @derivedFrom(field: "roles")
+}

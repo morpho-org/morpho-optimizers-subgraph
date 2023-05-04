@@ -1,10 +1,10 @@
 import { Address, BigDecimal, BigInt, log } from "@graphprotocol/graph-ts";
 
-import { ChainlinkPriceFeed } from "../../../generated/MorphoAaveV2/ChainlinkPriceFeed";
-import { LendingPoolAddressesProvider } from "../../../generated/MorphoAaveV2/LendingPoolAddressesProvider";
-import { MorphoAaveV2 } from "../../../generated/MorphoAaveV2/MorphoAaveV2";
-import { PriceOracle } from "../../../generated/MorphoAaveV2/PriceOracle";
-import { LendingProtocol, Market } from "../../../generated/schema";
+import { ChainlinkPriceFeed } from "../../../generated/morpho-v1/MorphoAaveV2/ChainlinkPriceFeed";
+import { LendingPoolAddressesProvider } from "../../../generated/morpho-v1/MorphoAaveV2/LendingPoolAddressesProvider";
+import { MorphoAaveV2 } from "../../../generated/morpho-v1/MorphoAaveV2/MorphoAaveV2";
+import { PriceOracle } from "../../../generated/morpho-v1/MorphoAaveV2/PriceOracle";
+import { LendingProtocol, Market } from "../../../generated/morpho-v1/schema";
 import {
   ETH_USD_PRICE_FEED_ADDRESS,
   exponentToBigDecimal,

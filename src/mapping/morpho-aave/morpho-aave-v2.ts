@@ -28,7 +28,7 @@ import {
   PauseStatusSet,
   ReserveFactorSet,
   ReserveFeeClaimed,
-} from "../../../generated/MorphoAaveV2/MorphoAaveV2";
+} from "../../../generated/morpho-v1/MorphoAaveV2/MorphoAaveV2";
 import { BASE_UNITS } from "../../constants";
 import { updateP2PRates } from "../../helpers";
 import { getMarket, getOrInitLendingProtocol } from "../../utils/initializers";
