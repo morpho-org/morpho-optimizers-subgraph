@@ -299,9 +299,9 @@ export function _handleLiquidated(
   amountSeized: BigInt,
   amountRepaid: BigInt
 ): void {
-  // collateral market
-  const market = getMarket(collateralAddress);
-  const inputToken = getOrInitToken(market.inputToken);
+  const collateralMarket = getMarket(collateralAddress);
+  const debtMarket = getMarket(debtAddress);
+  const inputToken = getOrInitToken(collateralMarket.inputToken);
   const protocol = getOrInitLendingProtocol(event.address);
 
   // create liquidate entity
@@ -350,76 +350,89 @@ export function _handleLiquidated(
   }
 
   // Update positions
+  const positions: string[] = [];
   const counterIDDebt = account.id
     .toHexString()
     .concat("-")
-    .concat(market.id.toHexString())
+    .concat(debtMarket.id.toHexString())
     .concat("-")
     .concat(PositionSide.BORROWER);
 
   const positionCounterDebt = _PositionCounter.load(counterIDDebt);
-  if (!positionCounterDebt) {
+  if (!positionCounterDebt && amountRepaid.gt(BigInt.zero())) {
+    log.warning("[Liquidation] no position counter found for {}", [counterIDDebt]);
     log.critical("[Liquidation] no position counter found for {}", [counterIDDebt]);
     return;
   }
-  const positionDebtID = positionCounterDebt.id
-    .concat("-")
-    .concat(positionCounterDebt.nextCount.toString());
-  let positionDebt = Position.load(positionDebtID);
-  if (!positionDebt) {
-    // That means that the liquidation has closed the position, so let's retrieve the last one
-    if (positionCounterDebt.nextCount === 0) {
-      log.critical("[Liquidation] counter is zero for position {}", [positionDebtID]);
-      return;
-    }
-    const positionID = positionCounterDebt.id
+  if (positionCounterDebt) {
+    const positionDebtID = positionCounterDebt.id
       .concat("-")
-      .concat((positionCounterDebt.nextCount - 1).toString());
-    positionDebt = Position.load(positionID);
+      .concat(positionCounterDebt.nextCount.toString());
+    let positionDebt = Position.load(positionDebtID);
     if (!positionDebt) {
-      log.critical("[Liquidation] no position found for {}", [positionID]);
-      return;
+      // That means that the liquidation has closed the position, so let's retrieve the last one
+      if (positionCounterDebt.nextCount === 0) {
+        log.warning("[Liquidation] counter is zero for position {}", [positionDebtID]);
+        log.critical("[Liquidation] counter is zero for position {}", [positionDebtID]);
+        return;
+      }
+      const positionID = positionCounterDebt.id
+        .concat("-")
+        .concat((positionCounterDebt.nextCount - 1).toString());
+      positionDebt = Position.load(positionID);
+      if (!positionDebt) {
+        log.warning("[Liquidation] no position found for {}", [positionID]);
+        log.critical("[Liquidation] no position found for {}", [positionID]);
+        return;
+      }
     }
-  }
 
-  positionDebt.liquidationCount += 1;
-  positionDebt.save();
+    positionDebt.liquidationCount += 1;
+    positionDebt.save();
+    positions.push(positionDebt.id);
+  }
 
   let counterIDCollateral = account.id
     .toHexString()
     .concat("-")
-    .concat(market.id.toHexString())
+    .concat(collateralMarket.id.toHexString())
     .concat("-")
     .concat(PositionSide.LENDER);
   if (event.address.equals(MORPHO_AAVE_V3_ADDRESS)) counterIDCollateral += "-collateral"; // liquidate collateral position on ma3
 
   const counterPositionCollateral = _PositionCounter.load(counterIDCollateral);
-  if (!counterPositionCollateral) {
+  if (!counterPositionCollateral && amountSeized.gt(BigInt.zero())) {
+    log.warning("[Liquidation] no position counter found for {}", [counterIDCollateral]);
     log.critical("[Liquidation] no position counter found for {}", [counterIDCollateral]);
     return;
   }
-  const positionCollateralID = counterPositionCollateral.id
-    .concat("-")
-    .concat(counterPositionCollateral.nextCount.toString());
-  let positionCollateral = Position.load(positionCollateralID);
-  if (!positionCollateral) {
-    // That means that the liquidation has closed the position, so let's retrieve the last one
-    if (counterPositionCollateral.nextCount === 0) {
-      log.critical("[Liquidation] counter is zero for position {}", [positionCollateralID]);
-      return;
-    }
-    const positionID = counterPositionCollateral.id
+  if (counterPositionCollateral) {
+    const positionCollateralID = counterPositionCollateral.id
       .concat("-")
-      .concat((counterPositionCollateral.nextCount - 1).toString());
-    positionCollateral = Position.load(positionID);
+      .concat(counterPositionCollateral.nextCount.toString());
+    let positionCollateral = Position.load(positionCollateralID);
     if (!positionCollateral) {
-      log.critical("[Liquidation] no position found for {}", [positionID]);
-      return;
+      // That means that the liquidation has closed the position, so let's retrieve the last one
+      if (counterPositionCollateral.nextCount === 0) {
+        log.warning("[Liquidation] counter is zero for position {}", [positionCollateralID]);
+        log.critical("[Liquidation] counter is zero for position {}", [positionCollateralID]);
+        return;
+      }
+      const positionID = counterPositionCollateral.id
+        .concat("-")
+        .concat((counterPositionCollateral.nextCount - 1).toString());
+      positionCollateral = Position.load(positionID);
+      if (!positionCollateral) {
+        log.warning("[Liquidation] no position found for {}", [positionID]);
+        log.critical("[Liquidation] no position found for {}", [positionID]);
+        return;
+      }
     }
-  }
 
-  positionCollateral.liquidationCount += 1;
-  positionCollateral.save();
+    positionCollateral.liquidationCount += 1;
+    positionCollateral.save();
+    positions.push(positionCollateral.id);
+  }
 
   const repayTokenMarket = getMarket(debtAddress);
   const debtAsset = getOrInitToken(repayTokenMarket.inputToken);
@@ -427,10 +440,10 @@ export function _handleLiquidated(
 
   liquidate.blockNumber = event.block.number;
   liquidate.timestamp = event.block.timestamp;
-  liquidate.positions = [positionCollateral!.id, positionDebt!.id];
+  liquidate.positions = positions;
   liquidate.liquidator = liquidator;
   liquidate.liquidatee = liquidated;
-  liquidate.market = market.id;
+  liquidate.market = collateralMarket.id;
   liquidate.hash = event.transaction.hash;
   liquidate.nonce = event.transaction.nonce;
   liquidate.logIndex = event.logIndex.toI32();
@@ -439,7 +452,7 @@ export function _handleLiquidated(
   liquidate.amountUSD = amountSeized
     .toBigDecimal()
     .div(exponentToBigDecimal(inputToken.decimals))
-    .times(market.inputTokenPriceUSD);
+    .times(collateralMarket.inputTokenPriceUSD);
   liquidate.profitUSD = liquidate.amountUSD.minus(
     amountRepaid
       .toBigDecimal()
@@ -451,9 +464,11 @@ export function _handleLiquidated(
   protocol.cumulativeLiquidateUSD = protocol.cumulativeLiquidateUSD.plus(liquidate.amountUSD);
   protocol.liquidationCount += 1;
   protocol.save();
-  market.cumulativeLiquidateUSD = market.cumulativeLiquidateUSD.plus(liquidate.amountUSD);
-  market.liquidationCount += 1;
-  market.save();
+  collateralMarket.cumulativeLiquidateUSD = collateralMarket.cumulativeLiquidateUSD.plus(
+    liquidate.amountUSD
+  );
+  collateralMarket.liquidationCount += 1;
+  collateralMarket.save();
 
   // update usage metrics
   snapshotUsage(
@@ -476,7 +491,7 @@ export function _handleLiquidated(
   // udpate market daily / hourly snapshots / financialSnapshots
   updateSnapshots(
     protocol,
-    market,
+    collateralMarket,
     liquidate.amountUSD,
     liquidate.amount,
     EventType.LIQUIDATOR,
