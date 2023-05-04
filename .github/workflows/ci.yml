@@ -15,6 +15,9 @@ jobs:
   builds:
     name: Build different Subgraphs
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        subgraph: [morpho, dao]
     steps:
       - uses: actions/checkout@v3
 
@@ -28,19 +31,21 @@ jobs:
         run: yarn --frozen-lockfile
 
       - name: Generate types
-        run: yarn codegen
+        run: yarn codegen:${{ matrix.subgraph }}
 
       - name: Build subgraph
-        run: yarn build
+        run: yarn build:${{ matrix.subgraph }}
 
   deployment:
     name: Deploy to TheGraph hosted service
     strategy:
       matrix:
-        subgraph: [morpho]
+        subgraph: [morpho, dao]
         include:
           - subgraph: morpho
           - hosted-service: morpho-association/morpho-subgraphs
+          - subgraph: dao
+          - hosted-service: morpho-association/morpho-dao
     environment:
       name: Hosted Service
       url: https://thegraph.com/hosted-service/subgraph/${{ matrix.hosted-service }}
