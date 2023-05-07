@@ -2,4 +2,4 @@
 . "$(dirname "$0")/_/husky.sh"
 
 yarn
-yarn graph:codegen
+yarn codegen

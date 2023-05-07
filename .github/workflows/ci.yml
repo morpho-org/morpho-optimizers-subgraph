@@ -15,6 +15,9 @@ jobs:
   builds:
     name: Build different Subgraphs
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        subgraph: [morpho, dao]
     steps:
       - uses: actions/checkout@v3
 
@@ -28,16 +31,24 @@ jobs:
         run: yarn --frozen-lockfile
 
       - name: Generate types
-        run: yarn graph:codegen
+        run: yarn codegen:${{ matrix.subgraph }}
 
       - name: Build subgraph
-        run: yarn graph:build
+        run: yarn build:${{ matrix.subgraph }}
 
   deployment:
     name: Deploy to TheGraph hosted service
+    strategy:
+      matrix:
+        subgraph: [morpho, dao]
+        include:
+          - subgraph: morpho
+          - hosted-service: morpho-association/morpho-subgraphs
+          - subgraph: dao
+          - hosted-service: morpho-association/morpho-dao
     environment:
       name: Hosted Service
-      url: https://thegraph.com/hosted-service/subgraph/morpho-association/morpho-subgraphs
+      url: https://thegraph.com/hosted-service/subgraph/${{ matrix.hosted-service }}
     needs: builds
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -54,10 +65,10 @@ jobs:
         run: yarn --frozen-lockfile
 
       - name: Generate types
-        run: yarn graph:codegen
+        run: yarn codegen:${{ matrix.subgraph }}
 
       - name: Deploy to the hosted service
-        run: yarn graph auth --product hosted-service ${{ secrets.HOSTED_SERVICE_KEY }} && yarn graph:deploy:hs
+        run: yarn graph auth --product hosted-service ${{ secrets.HOSTED_SERVICE_KEY }} && yarn deploy:${{ matrix.subgraph }}:hs
 
   release:
     name: Create new release

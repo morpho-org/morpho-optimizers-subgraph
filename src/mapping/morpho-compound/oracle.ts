@@ -3,13 +3,9 @@ import { Address, Bytes, log } from "@graphprotocol/graph-ts";
 import {
   CompoundOracle,
   PriceUpdated,
-} from "../../../generated/templates/CompoundOracle/CompoundOracle";
+} from "../../../generated/morpho-v1/templates/CompoundOracle/CompoundOracle";
 import { exponentToBigDecimal, MORPHO_COMPOUND_ADDRESS } from "../../constants";
-import {
-  getMarket,
-  getOrInitLendingProtocol,
-  getOrInitToken,
-} from "../../utils/initializers";
+import { getMarket, getOrInitLendingProtocol, getOrInitToken } from "../../utils/initializers";
 
 export function handlePriceUpdated(event: PriceUpdated): void {
   const protocol = getOrInitLendingProtocol(MORPHO_COMPOUND_ADDRESS);

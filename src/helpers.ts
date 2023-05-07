@@ -14,7 +14,7 @@ import {
   PositionSnapshot,
   _ActiveAccount,
   _PositionCounter,
-} from "../generated/schema";
+} from "../generated/morpho-v1/schema";
 
 import {
   INT_ZERO,

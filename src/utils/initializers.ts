@@ -1,20 +1,20 @@
 import { Address, BigDecimal, Bytes, log } from "@graphprotocol/graph-ts";
 
-import { ERC20 } from "../../generated/MorphoAaveV2/ERC20";
-import { LendingPool } from "../../generated/MorphoAaveV2/LendingPool";
-import { LendingPoolAddressesProvider } from "../../generated/MorphoAaveV2/LendingPoolAddressesProvider";
-import { MorphoAaveV2 } from "../../generated/MorphoAaveV2/MorphoAaveV2";
-import { AaveV3AddressesProvider } from "../../generated/MorphoAaveV3/AaveV3AddressesProvider";
-import { MorphoAaveV3 } from "../../generated/MorphoAaveV3/MorphoAaveV3";
-import { MorphoCompound } from "../../generated/MorphoCompound/MorphoCompound";
-import { Token, LendingProtocol, Market, _MarketList } from "../../generated/schema";
+import { ERC20 } from "../../generated/morpho-v1/MorphoAaveV2/ERC20";
+import { LendingPool } from "../../generated/morpho-v1/MorphoAaveV2/LendingPool";
+import { LendingPoolAddressesProvider } from "../../generated/morpho-v1/MorphoAaveV2/LendingPoolAddressesProvider";
+import { MorphoAaveV2 } from "../../generated/morpho-v1/MorphoAaveV2/MorphoAaveV2";
+import { AaveV3AddressesProvider } from "../../generated/morpho-v1/MorphoAaveV3/AaveV3AddressesProvider";
+import { MorphoAaveV3 } from "../../generated/morpho-v1/MorphoAaveV3/MorphoAaveV3";
+import { MorphoCompound } from "../../generated/morpho-v1/MorphoCompound/MorphoCompound";
+import { Token, LendingProtocol, Market, _MarketList } from "../../generated/morpho-v1/schema";
 import {
   AaveV3Pool as AaveV3PoolTemplate,
   AaveV3PoolConfigurator,
   Comptroller,
   LendingPool as LendingPoolTemplate,
-} from "../../generated/templates";
-import { LendingPoolConfigurator as LendingPoolConfiguratorTemplate } from "../../generated/templates";
+} from "../../generated/morpho-v1/templates";
+import { LendingPoolConfigurator as LendingPoolConfiguratorTemplate } from "../../generated/morpho-v1/templates";
 import {
   MORPHO_AAVE_V2_ADDRESS,
   MORPHO_AAVE_V3_ADDRESS,

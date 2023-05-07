@@ -1,7 +1,7 @@
 import { Address } from "@graphprotocol/graph-ts";
 
-import { Market } from "../../../generated/schema";
-import { CompoundOracle } from "../../../generated/templates";
+import { Market } from "../../../generated/morpho-v1/schema";
+import { CompoundOracle } from "../../../generated/morpho-v1/templates";
 import {
   CompBorrowSpeedUpdated,
   CompSupplySpeedUpdated,
@@ -9,7 +9,7 @@ import {
   NewCloseFactor,
   NewCollateralFactor,
   NewPriceOracle,
-} from "../../../generated/templates/Comptroller/Comptroller";
+} from "../../../generated/morpho-v1/templates/Comptroller/Comptroller";
 import {
   BIGDECIMAL_ONE,
   DEFAULT_DECIMALS,
@@ -18,13 +18,9 @@ import {
 } from "../../constants";
 import { getMarket, getOrInitLendingProtocol } from "../../utils/initializers";
 
-export function handleCompBorrowSpeedUpdated(
-  event: CompBorrowSpeedUpdated
-): void {}
+export function handleCompBorrowSpeedUpdated(event: CompBorrowSpeedUpdated): void {}
 
-export function handleCompSupplySpeedUpdated(
-  event: CompSupplySpeedUpdated
-): void {}
+export function handleCompSupplySpeedUpdated(event: CompSupplySpeedUpdated): void {}
 
 export function handleNewBorrowCap(event: NewBorrowCap): void {
   const market = Market.load(event.params.cToken);

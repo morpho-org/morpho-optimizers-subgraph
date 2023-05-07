@@ -4,7 +4,7 @@ import {
   AccrueInterest,
   AccrueInterest1,
   CToken,
-} from "../../../generated/templates/CToken/CToken";
+} from "../../../generated/morpho-v1/templates/CToken/CToken";
 import { BLOCKS_PER_YEAR, MORPHO_COMPOUND_ADDRESS } from "../../constants";
 import { getOrInitLendingProtocol } from "../../utils/initializers";
 import { _handleReserveUpdate } from "../common";

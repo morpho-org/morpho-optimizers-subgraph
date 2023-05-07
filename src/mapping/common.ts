@@ -10,7 +10,7 @@ import {
   Position,
   Repay,
   Withdraw,
-} from "../../generated/schema";
+} from "../../generated/morpho-v1/schema";
 import {
   BIGDECIMAL_HUNDRED,
   EventType,
@@ -689,7 +689,7 @@ export function _handleP2PIndexesUpdated(
 
   const supplySideRevenueDeltaUSD = totalRevenueDeltaUSD.minus(protocolSideRevenueDeltaUSD);
 
-  // Morpho specific: update the interests generated on Morpho by both suppliers and borrowers, matched or not
+  // Morpho specific: update the interests generated/morpho-v1 on Morpho by both suppliers and borrowers, matched or not
   market.poolSupplyInterests = market.poolSupplyInterests.plus(poolSupplyInterest);
   market.poolSupplyInterestsUSD = market.poolSupplyInterestsUSD.plus(
     poolSupplyInterest.times(market.inputTokenPriceUSD)

@@ -1,13 +1,16 @@
 import { Address, BigDecimal, BigInt, Bytes } from "@graphprotocol/graph-ts";
 
-import { AToken } from "../../../generated/MorphoAaveV2/AToken";
-import { ERC20 } from "../../../generated/MorphoAaveV2/ERC20";
-import { LendingPool } from "../../../generated/MorphoAaveV2/LendingPool";
-import { LendingPoolAddressesProvider } from "../../../generated/MorphoAaveV2/LendingPoolAddressesProvider";
-import { MarketCreated, MorphoAaveV2 } from "../../../generated/MorphoAaveV2/MorphoAaveV2";
-import { PriceOracle } from "../../../generated/MorphoAaveV2/PriceOracle";
-import { ProtocolDataProvider } from "../../../generated/MorphoAaveV2/ProtocolDataProvider";
-import { Market, UnderlyingTokenMapping } from "../../../generated/schema";
+import { AToken } from "../../../generated/morpho-v1/MorphoAaveV2/AToken";
+import { ERC20 } from "../../../generated/morpho-v1/MorphoAaveV2/ERC20";
+import { LendingPool } from "../../../generated/morpho-v1/MorphoAaveV2/LendingPool";
+import { LendingPoolAddressesProvider } from "../../../generated/morpho-v1/MorphoAaveV2/LendingPoolAddressesProvider";
+import {
+  MarketCreated,
+  MorphoAaveV2,
+} from "../../../generated/morpho-v1/MorphoAaveV2/MorphoAaveV2";
+import { PriceOracle } from "../../../generated/morpho-v1/MorphoAaveV2/PriceOracle";
+import { ProtocolDataProvider } from "../../../generated/morpho-v1/MorphoAaveV2/ProtocolDataProvider";
+import { Market, UnderlyingTokenMapping } from "../../../generated/morpho-v1/schema";
 import { BASE_UNITS, WAD } from "../../constants";
 import {
   getOrInitLendingProtocol,

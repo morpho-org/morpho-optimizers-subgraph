@@ -30,7 +30,7 @@ import {
   Borrowed,
   BorrowerPositionUpdated,
   P2PIndexesUpdated,
-} from "../../../generated/MorphoCompound/MorphoCompound";
+} from "../../../generated/morpho-v1/MorphoCompound/MorphoCompound";
 import { BASE_UNITS } from "../../constants";
 import { getMarket, getOrInitLendingProtocol } from "../../utils/initializers";
 import {

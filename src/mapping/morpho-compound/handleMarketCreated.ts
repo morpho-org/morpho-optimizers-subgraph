@@ -1,11 +1,14 @@
 import { Address, BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 
-import { CToken } from "../../../generated/MorphoCompound/CToken";
-import { CompoundOracle } from "../../../generated/MorphoCompound/CompoundOracle";
-import { Comptroller } from "../../../generated/MorphoCompound/Comptroller";
-import { MarketCreated, MorphoCompound } from "../../../generated/MorphoCompound/MorphoCompound";
-import { Market } from "../../../generated/schema";
-import { CToken as CTokenTemplate } from "../../../generated/templates";
+import { CToken } from "../../../generated/morpho-v1/MorphoCompound/CToken";
+import { CompoundOracle } from "../../../generated/morpho-v1/MorphoCompound/CompoundOracle";
+import { Comptroller } from "../../../generated/morpho-v1/MorphoCompound/Comptroller";
+import {
+  MarketCreated,
+  MorphoCompound,
+} from "../../../generated/morpho-v1/MorphoCompound/MorphoCompound";
+import { Market } from "../../../generated/morpho-v1/schema";
+import { CToken as CTokenTemplate } from "../../../generated/morpho-v1/templates";
 import {
   BASE_UNITS,
   BIGDECIMAL_ONE,

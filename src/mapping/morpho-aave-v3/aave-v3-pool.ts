@@ -1,6 +1,6 @@
 import { log } from "@graphprotocol/graph-ts";
 
-import { Market } from "../../../generated/schema";
+import { Market } from "../../../generated/morpho-v1/schema";
 import {
   BackUnbacked,
   Borrow,
@@ -18,7 +18,7 @@ import {
   SwapBorrowRateMode,
   UserEModeSet,
   Withdraw,
-} from "../../../generated/templates/AaveV3Pool/AaveV3Pool";
+} from "../../../generated/morpho-v1/templates/AaveV3Pool/AaveV3Pool";
 
 export function handleBackUnbacked(event: BackUnbacked): void {}
 
