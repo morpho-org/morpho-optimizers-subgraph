@@ -2,7 +2,7 @@ import { Address, BigDecimal } from "@graphprotocol/graph-ts";
 
 import { UnderlyingTokenMapping } from "../../../generated/morpho-v1/schema";
 import { CollateralConfigurationChanged } from "../../../generated/morpho-v1/templates/LendingPoolConfigurator/LendingPoolConfigurator";
-import { BASE_UNITS, BIGDECIMAL_HUNDRED, exponentToBigDecimal, INT_FOUR } from "../../constants";
+import { BASE_UNITS, BIGDECIMAL_ONE } from "../../constants";
 import { getMarket } from "../../utils/initializers";
 
 export function handleCollateralConfigurationChanged(event: CollateralConfigurationChanged): void {
@@ -14,13 +14,13 @@ export function handleCollateralConfigurationChanged(event: CollateralConfigurat
   market.maximumLTV = event.params.ltv.toBigDecimal().div(BASE_UNITS);
   market.liquidationThreshold = event.params.liquidationThreshold.toBigDecimal().div(BASE_UNITS);
   market.liquidationPenalty = event.params.liquidationBonus.toBigDecimal().div(BASE_UNITS);
-  market.save();
+
   // The liquidation bonus value is equal to the liquidation penalty, the naming is a matter of which side of the liquidation a user is on
-  // The liquidationBonus parameter comes out as above 100%, represented by a 5 digit integer over 10000 (100%).
-  // To extract the expected value in the liquidationPenalty field: convert to BigDecimal, subtract by 10000 and divide by 100
+  // The liquidationBonus parameter comes out as above 1
+  // The LiquidationPenalty is thus the liquidationBonus minus 1
   if (market.liquidationPenalty.gt(BigDecimal.zero())) {
-    market.liquidationPenalty = market.liquidationPenalty
-      .minus(exponentToBigDecimal(INT_FOUR))
-      .div(BIGDECIMAL_HUNDRED);
+    market.liquidationPenalty = market.liquidationPenalty.minus(BIGDECIMAL_ONE);
   }
+
+  market.save();
 }
