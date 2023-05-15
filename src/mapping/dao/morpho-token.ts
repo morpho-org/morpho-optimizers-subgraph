@@ -8,7 +8,7 @@ import {
   Transfer,
   UserRoleUpdated,
 } from "../../../generated/dao/MorphoToken/MorphoToken";
-import { Account, Role } from "../../../generated/dao/schema";
+import { Account } from "../../../generated/dao/schema";
 
 import { getOrInitAccount, getOrInitRole, loadMetrics } from "./utils/initialisers";
 
@@ -22,7 +22,7 @@ export function handleRoleCapabilityUpdated(event: RoleCapabilityUpdated): void 
   const role = getOrInitRole(event.params.role);
   const newCapabilities: Bytes[] = [];
   for (let i = 0; i < role.capabilities.length; i++) {
-    if (role.capabilities[i] !== event.params.functionSig) {
+    if (!role.capabilities[i].equals(event.params.functionSig)) {
       newCapabilities.push(role.capabilities[i]);
     }
   }
