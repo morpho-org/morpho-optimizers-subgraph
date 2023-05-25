@@ -321,13 +321,14 @@ export function handleMarketCreated(event: MarketCreated): void {
 
   // Add the underlying tokens mapping
   let underlyingMapping = UnderlyingTokenMapping.load(event.params.underlying);
-  if (underlyingMapping == null)
+  if (underlyingMapping == null) {
     underlyingMapping = new UnderlyingTokenMapping(event.params.underlying);
+    underlyingMapping.aToken = Address.zero();
+    underlyingMapping.debtToken = Address.zero();
+  }
 
   underlyingMapping.variableDebtTokenV3 = morphoMarket.variableDebtToken;
   underlyingMapping.aTokenV3 = morphoMarket.aToken;
-  if (!underlyingMapping.aToken) underlyingMapping.aToken = Address.zero();
-  if (!underlyingMapping.debtToken) underlyingMapping.debtToken = Address.zero();
   underlyingMapping.save();
 
   market.inputTokenBalance = underlying.balanceOf(morphoMarket.aToken);
