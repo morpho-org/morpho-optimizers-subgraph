@@ -993,8 +993,8 @@ export function updateP2PRates(market: Market, __MATHS__: IMaths): void {
     market._reserveBorrowIndex,
     market._lastPoolSupplyIndex,
     market._lastPoolBorrowIndex,
-    market._p2pIndexCursor,
-    market._reserveFactor,
+    market._p2pIndexCursor_BI,
+    market._reserveFactor_BI,
     __MATHS__
   );
   market._p2pSupplyIndexInternal = computeP2PIndex(
@@ -1022,10 +1022,10 @@ export function updateP2PRates(market: Market, __MATHS__: IMaths): void {
     market._poolSupplyRate,
     market._lastPoolBorrowIndex,
     market._p2pBorrowIndexInternal,
-    market._p2pIndexCursor,
+    market._p2pIndexCursor_BI,
     market._p2pBorrowDelta,
     market._p2pSupplyAmount,
-    market._reserveFactor,
+    market._reserveFactor_BI,
     proportionIdle,
     __MATHS__
   );
@@ -1034,10 +1034,10 @@ export function updateP2PRates(market: Market, __MATHS__: IMaths): void {
     market._poolSupplyRate,
     market._lastPoolSupplyIndex,
     market._p2pSupplyIndexInternal,
-    market._p2pIndexCursor,
+    market._p2pIndexCursor_BI,
     market._p2pSupplyDelta,
     market._p2pSupplyAmount,
-    market._reserveFactor,
+    market._reserveFactor_BI,
     proportionIdle,
     __MATHS__
   );

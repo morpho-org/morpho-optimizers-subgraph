@@ -135,9 +135,9 @@ export function handleMarketCreated(event: MarketCreated): void {
   const reserveFactor = BigInt.fromI32(morphoMarket.getReserveFactor());
   const p2pIndexCursor = BigInt.fromI32(morphoMarket.getP2pIndexCursor());
   market.reserveFactor = reserveFactor.toBigDecimal().div(BASE_UNITS);
-  market._reserveFactor = reserveFactor;
+  market._reserveFactor_BI = reserveFactor;
   market.p2pIndexCursor = p2pIndexCursor.toBigDecimal().div(BASE_UNITS);
-  market._p2pIndexCursor = p2pIndexCursor;
+  market._p2pIndexCursor_BI = p2pIndexCursor;
 
   market.totalSupplyOnPool = BigDecimal.zero();
   market.totalBorrowOnPool = BigDecimal.zero();

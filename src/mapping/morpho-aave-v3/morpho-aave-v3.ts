@@ -403,7 +403,7 @@ export function handleMarketCreated(event: MarketCreated): void {
   market.isP2PDisabled = false;
 
   market.reserveFactor = BigDecimal.zero(); // Event is emitted right after the market creation
-  market._reserveFactor = BigInt.zero();
+  market._reserveFactor_BI = BigInt.zero();
   market.p2pIndexCursor = BigDecimal.zero(); // Event is emitted right after the market creation
 
   market.totalSupplyOnPool = BigDecimal.zero();
@@ -474,7 +474,7 @@ export function handleReserveFactorSet(event: ReserveFactorSet): void {
   const market = getMarket(event.params.underlying);
   const reserveFactor = BigInt.fromI32(event.params.reserveFactor);
   market.reserveFactor = reserveFactor.toBigDecimal().div(BASE_UNITS);
-  market._reserveFactor = reserveFactor;
+  market._reserveFactor_BI = reserveFactor;
   market.save();
 }
 
@@ -482,7 +482,7 @@ export function handleP2PIndexCursorSet(event: P2PIndexCursorSet): void {
   const market = getMarket(event.params.underlying);
   const p2pIndexCursor = BigInt.fromI32(event.params.p2pIndexCursor);
   market.p2pIndexCursor = p2pIndexCursor.toBigDecimal().div(BASE_UNITS);
-  market._p2pIndexCursor = p2pIndexCursor;
+  market._p2pIndexCursor_BI = p2pIndexCursor;
   market.save();
 }
 
