@@ -31,6 +31,8 @@ import {
   InterestRateType,
   BIGDECIMAL_HUNDRED,
   exponentToBigInt,
+  BIGINT_ONE,
+  BASE_UNITS_BI,
 } from "./constants";
 import { getMarket, getOrInitToken } from "./utils/initializers";
 
@@ -980,21 +982,25 @@ export function updateP2PRates(market: Market): void {
     if (proportionIdle.gt(offset)) proportionIdle = offset;
   }
 
-  const supplyRate = market._poolSupplyRate.toBigDecimal().div(offsetBD);
-  const borrowRate = market._poolBorrowRate.toBigDecimal().div(offsetBD);
-  let midRate: BigDecimal;
+  let midRate: BigInt;
 
-  if (borrowRate.lt(supplyRate)) midRate = borrowRate;
+  if (market._poolBorrowRate.lt(market._poolSupplyRate)) midRate = market._poolBorrowRate;
   else {
-    midRate = BIGDECIMAL_ONE.minus(market.p2pIndexCursor)
-      .times(supplyRate)
-      .plus(borrowRate.times(market.p2pIndexCursor));
+    midRate = BIGINT_ONE.times(BASE_UNITS_BI)
+      .minus(market._p2pIndexCursor)
+      .times(market._poolSupplyRate)
+      .plus(market._poolBorrowRate.times(market._p2pIndexCursor))
+      .div(BASE_UNITS_BI);
   }
-  const p2pSupplyRateWithFees = market.reserveFactor
-    ? midRate.minus(midRate.minus(supplyRate).times(market.reserveFactor))
+  const p2pSupplyRateWithFees = market._reserveFactor
+    ? midRate.minus(
+        midRate.minus(market._poolSupplyRate).times(market._reserveFactor).div(BASE_UNITS_BI)
+      )
     : midRate;
   const p2pBorrowRateWithFees = market.reserveFactor
-    ? midRate.plus(borrowRate.minus(midRate).times(market.reserveFactor))
+    ? midRate.plus(
+        market._poolBorrowRate.minus(midRate).times(market._reserveFactor).div(BASE_UNITS_BI)
+      )
     : midRate;
   let p2pSupplyRateWithDelta = p2pSupplyRateWithFees;
   if (market._p2pSupplyDelta.gt(BigInt.zero()) && market._p2pSupplyAmount.gt(BigInt.zero())) {
@@ -1002,11 +1008,10 @@ export function updateP2PRates(market: Market): void {
       .times(market._reserveSupplyIndex)
       .div(wadToRay(market._p2pSupplyAmount).times(market._p2pSupplyIndex).div(offset));
     if (shareOfTheDelta.gt(offset.minus(proportionIdle))) shareOfTheDelta = offset;
-    const sotd = shareOfTheDelta.toBigDecimal().div(offsetBD);
-    const idleBD = proportionIdle.toBigDecimal().div(offsetBD);
     p2pSupplyRateWithDelta = p2pSupplyRateWithFees
-      .times(BIGDECIMAL_ONE.minus(sotd).minus(idleBD))
-      .plus(supplyRate.times(sotd).plus(idleBD));
+      .times(BIGINT_ONE.times(offset).minus(shareOfTheDelta).minus(proportionIdle))
+      .plus(market._poolSupplyRate.times(shareOfTheDelta).plus(proportionIdle))
+      .div(offset);
   }
   let p2pBorrowRateWithDelta = p2pBorrowRateWithFees;
   if (market._p2pBorrowDelta.gt(BigInt.zero()) && market._p2pBorrowAmount.gt(BigInt.zero())) {
@@ -1014,23 +1019,23 @@ export function updateP2PRates(market: Market): void {
       .times(market._reserveBorrowIndex)
       .div(wadToRay(market._p2pBorrowAmount).times(market._p2pBorrowIndex).div(offset));
     if (shareOfTheDelta.gt(offset)) shareOfTheDelta = offset;
-    const sotd = shareOfTheDelta.toBigDecimal().div(offsetBD);
     p2pBorrowRateWithDelta = p2pBorrowRateWithFees
-      .times(BIGDECIMAL_ONE.minus(sotd))
-      .plus(borrowRate.times(sotd));
+      .times(BIGINT_ONE.times(offset).minus(shareOfTheDelta))
+      .plus(market._poolBorrowRate.times(shareOfTheDelta))
+      .div(offset);
   }
 
   const p2pSupplyRate = createInterestRate(
     market.id,
     InterestRateSide.LENDER,
     InterestRateType.P2P,
-    p2pSupplyRateWithDelta.times(BIGDECIMAL_HUNDRED)
+    p2pSupplyRateWithDelta.toBigDecimal().div(offsetBD).times(BIGDECIMAL_HUNDRED)
   );
   const p2pBorrowRate = createInterestRate(
     market.id,
     InterestRateSide.BORROWER,
     InterestRateType.P2P,
-    p2pBorrowRateWithDelta.times(BIGDECIMAL_HUNDRED)
+    p2pBorrowRateWithDelta.toBigDecimal().div(offsetBD).times(BIGDECIMAL_HUNDRED)
   );
 
   if (!market.rates) return;
@@ -1040,6 +1045,8 @@ export function updateP2PRates(market: Market): void {
   if (!supplyRateId || !borrowRateId) return;
 
   market.rates = [supplyRateId, p2pSupplyRate.id, p2pBorrowRate.id, borrowRateId];
+  market._p2pSupplyRate = p2pSupplyRateWithDelta;
+  market._p2pBorrowRate = p2pBorrowRateWithDelta;
 }
 
 export const getEventId = (hash: Bytes, logIndex: BigInt): Bytes =>

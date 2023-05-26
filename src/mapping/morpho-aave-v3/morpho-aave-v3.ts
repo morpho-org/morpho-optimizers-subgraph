@@ -382,6 +382,8 @@ export function handleMarketCreated(event: MarketCreated): void {
 
   market._p2pSupplyIndex = RAY_BI;
   market._p2pBorrowIndex = RAY_BI;
+  market._p2pSupplyRate = BigInt.zero();
+  market._p2pBorrowRate = BigInt.zero();
 
   market._lastPoolSupplyIndex = poolReserveData.liquidityIndex;
   market._lastPoolBorrowIndex = poolReserveData.variableBorrowIndex;
@@ -399,6 +401,7 @@ export function handleMarketCreated(event: MarketCreated): void {
   market.isP2PDisabled = false;
 
   market.reserveFactor = BigDecimal.zero(); // Event is emitted right after the market creation
+  market._reserveFactor = BigInt.zero();
   market.p2pIndexCursor = BigDecimal.zero(); // Event is emitted right after the market creation
 
   market.totalSupplyOnPool = BigDecimal.zero();
@@ -467,15 +470,17 @@ export function handleTreasuryVaultSet(event: TreasuryVaultSet): void {}
 
 export function handleReserveFactorSet(event: ReserveFactorSet): void {
   const market = getMarket(event.params.underlying);
-  market.reserveFactor = BigInt.fromI32(event.params.reserveFactor).toBigDecimal().div(BASE_UNITS);
+  const reserveFactor = BigInt.fromI32(event.params.reserveFactor);
+  market.reserveFactor = reserveFactor.toBigDecimal().div(BASE_UNITS);
+  market._reserveFactor = reserveFactor;
   market.save();
 }
 
 export function handleP2PIndexCursorSet(event: P2PIndexCursorSet): void {
   const market = getMarket(event.params.underlying);
-  market.p2pIndexCursor = BigInt.fromI32(event.params.p2pIndexCursor)
-    .toBigDecimal()
-    .div(BASE_UNITS);
+  const p2pIndexCursor = BigInt.fromI32(event.params.p2pIndexCursor);
+  market.p2pIndexCursor = p2pIndexCursor.toBigDecimal().div(BASE_UNITS);
+  market._p2pIndexCursor = p2pIndexCursor;
   market.save();
 }
 

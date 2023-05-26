@@ -1,6 +1,7 @@
 import { Address, BigDecimal, BigInt, Bytes, ethereum } from "@graphprotocol/graph-ts";
 
 export const BASE_UNITS = BigDecimal.fromString("10000");
+export const BASE_UNITS_BI = BigInt.fromString("10000");
 export const WAD = BigDecimal.fromString("1000000000000000000");
 export const WAD_BI = BigInt.fromString("1000000000000000000");
 

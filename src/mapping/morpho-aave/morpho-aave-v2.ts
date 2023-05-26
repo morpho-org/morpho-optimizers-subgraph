@@ -221,7 +221,9 @@ export function handleOwnershipTransferred(event: OwnershipTransferred): void {
 
 export function handleP2PIndexCursorSet(event: P2PIndexCursorSet): void {
   const market = getMarket(event.params._poolToken);
-  market.p2pIndexCursor = BigInt.fromI32(event.params._newValue).toBigDecimal().div(BASE_UNITS);
+  const p2pIndexCursor = BigInt.fromI32(event.params._newValue);
+  market.p2pIndexCursor = p2pIndexCursor.toBigDecimal().div(BASE_UNITS);
+  market._p2pIndexCursor = p2pIndexCursor;
   market.save();
 }
 
@@ -249,7 +251,9 @@ export function handlePauseStatusSet(event: PauseStatusSet): void {
 }
 export function handleReserveFactorSet(event: ReserveFactorSet): void {
   const market = getMarket(event.params._poolToken);
-  market.reserveFactor = BigInt.fromI32(event.params._newValue).toBigDecimal().div(BASE_UNITS);
+  const reserveFactor = BigInt.fromI32(event.params._newValue);
+  market.reserveFactor = reserveFactor.toBigDecimal().div(BASE_UNITS);
+  market._reserveFactor = reserveFactor;
   market.save();
 }
 
