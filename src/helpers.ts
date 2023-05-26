@@ -34,8 +34,9 @@ import {
   computeP2PBorrowRate,
   computeP2PIndex,
   computeP2PSupplyRate,
-} from "./mapping/common/InterestRatesModel";
+} from "./utils/common/InterestRatesModel";
 import { getMarket, getOrInitToken } from "./utils/initializers";
+import { IMaths } from "./utils/maths/maths.interface";
 
 function getDay(timestamp: BigInt): BigInt {
   return timestamp.div(BigInt.fromI32(SECONDS_PER_DAY));
@@ -984,7 +985,7 @@ function computeProportionIdle(market: Market): BigInt {
   return BigInt.zero();
 }
 
-export function updateP2PRates(market: Market): void {
+export function updateP2PRates(market: Market, __MATHS__: IMaths): void {
   const offset = BigInt.fromI32(market._indexesOffset).toBigDecimal();
   const proportionIdle = computeProportionIdle(market);
   const growthFactors = computeGrowthFactors(
@@ -993,7 +994,8 @@ export function updateP2PRates(market: Market): void {
     market._lastPoolSupplyIndex,
     market._lastPoolBorrowIndex,
     market._p2pIndexCursor,
-    market._reserveFactor
+    market._reserveFactor,
+    __MATHS__
   );
   market._p2pSupplyIndexInternal = computeP2PIndex(
     market._lastPoolSupplyIndex,
@@ -1002,7 +1004,8 @@ export function updateP2PRates(market: Market): void {
     growthFactors.poolSupplyGrowthFactor,
     market._p2pSupplyDelta,
     market._p2pSupplyAmount,
-    proportionIdle
+    proportionIdle,
+    __MATHS__
   );
   market._p2pBorrowIndexInternal = computeP2PIndex(
     market._lastPoolBorrowIndex,
@@ -1011,7 +1014,8 @@ export function updateP2PRates(market: Market): void {
     growthFactors.poolBorrowGrowthFactor,
     market._p2pBorrowDelta,
     market._p2pBorrowAmount,
-    proportionIdle
+    proportionIdle,
+    __MATHS__
   );
   market._p2pBorrowRate = computeP2PBorrowRate(
     market._poolBorrowRate,
@@ -1022,7 +1026,8 @@ export function updateP2PRates(market: Market): void {
     market._p2pBorrowDelta,
     market._p2pSupplyAmount,
     market._reserveFactor,
-    proportionIdle
+    proportionIdle,
+    __MATHS__
   );
   market._p2pSupplyRate = computeP2PSupplyRate(
     market._poolBorrowRate,
@@ -1033,7 +1038,8 @@ export function updateP2PRates(market: Market): void {
     market._p2pSupplyDelta,
     market._p2pSupplyAmount,
     market._reserveFactor,
-    proportionIdle
+    proportionIdle,
+    __MATHS__
   );
 
   const p2pSupplyRate = createInterestRate(

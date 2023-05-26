@@ -9,6 +9,7 @@ import { ReserveDataUpdated } from "../../../generated/morpho-v1/templates/Lendi
 import { MORPHO_AAVE_V2_ADDRESS } from "../../constants";
 import { fetchAssetPrice } from "../../utils/aaveV2/fetchers";
 import { getOrInitLendingProtocol, getOrInitToken } from "../../utils/initializers";
+import { AaveMath } from "../../utils/maths/AaveMath";
 import { _handleReserveUpdate } from "../common";
 
 export class ReserveUpdateParams {
@@ -54,5 +55,5 @@ export function handleReserveDataUpdated(event: ReserveDataUpdated): void {
     event.params.liquidityRate,
     event.params.variableBorrowRate
   );
-  _handleReserveUpdate(params);
+  _handleReserveUpdate(params, new AaveMath());
 }

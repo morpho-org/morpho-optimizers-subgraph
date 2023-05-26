@@ -34,6 +34,7 @@ import {
   updateSnapshots,
 } from "../helpers";
 import { getMarket, getOrInitLendingProtocol, getOrInitToken } from "../utils/initializers";
+import { IMaths } from "../utils/maths/maths.interface";
 
 import { ReserveUpdateParams } from "./morpho-aave/lending-pool";
 
@@ -876,7 +877,7 @@ export function _handleRepaid(
   updateProtocolPosition(protocol, market);
 }
 
-export function _handleReserveUpdate(params: ReserveUpdateParams): void {
+export function _handleReserveUpdate(params: ReserveUpdateParams, __MATHS__: IMaths): void {
   const market = getMarket(params.marketAddress);
 
   // Update the total supply and borrow frequently by using pool updates
@@ -929,7 +930,7 @@ export function _handleReserveUpdate(params: ReserveUpdateParams): void {
     poolBorrowRate.id,
   ];
 
-  updateP2PRates(market);
+  updateP2PRates(market, __MATHS__);
 
   updateProtocolPosition(params.protocol, market);
 

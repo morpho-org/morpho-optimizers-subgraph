@@ -1,9 +1,9 @@
 import { BigInt } from "@graphprotocol/graph-ts";
 
-import { Market } from "../../../generated/morpho-v1/schema";
 import { minBN } from "../../bn";
 import { WAD_BI } from "../../constants";
-import PercentMath from "../../utils/maths/PercentMath";
+import PercentMath from "../maths/PercentMath";
+import { IMaths } from "../maths/maths.interface";
 
 function computeP2PRate(
   poolBorrowRate: BigInt,
@@ -20,10 +20,17 @@ export function computeGrowthFactors(
   lastSupplyPoolIndex: BigInt,
   lastBorrowPoolIndex: BigInt,
   p2pIndexCursor: BigInt,
-  reserveFactor: BigInt
+  reserveFactor: BigInt,
+  __MATHS__: IMaths
 ) {
-  const poolSupplyGrowthFactor: BigInt = newPoolSupplyIndex.div(lastSupplyPoolIndex);
-  const poolBorrowGrowthFactor: BigInt = newPoolBorrowIndex.div(lastBorrowPoolIndex);
+  const poolSupplyGrowthFactor: BigInt = __MATHS__.indexDiv(
+    newPoolSupplyIndex,
+    lastSupplyPoolIndex
+  );
+  const poolBorrowGrowthFactor: BigInt = __MATHS__.indexDiv(
+    newPoolBorrowIndex,
+    lastBorrowPoolIndex
+  );
 
   let p2pSupplyGrowthFactor: BigInt;
   let p2pBorrowGrowthFactor: BigInt;
@@ -62,24 +69,26 @@ export function computeP2PIndex(
   poolGrowthFactor: BigInt,
   p2pDelta: BigInt,
   p2pAmount: BigInt,
-  proportionIdle: BigInt
+  proportionIdle: BigInt,
+  __MATHS__: IMaths
 ): BigInt {
   let newP2PIndex: BigInt;
   if (p2pAmount.isZero() || (p2pDelta.isZero() && proportionIdle.isZero())) {
-    newP2PIndex = lastP2PIndex.times(p2pGrowthFactor);
+    newP2PIndex = __MATHS__.indexMul(lastP2PIndex, p2pGrowthFactor);
   } else {
-    const proportionOnPool = p2pDelta.times(lastPoolIndex);
-    const proportionInP2P = p2pAmount.times(lastP2PIndex);
     const shareOfTheDelta: BigInt = minBN(
-      proportionOnPool.div(proportionInP2P),
-      WAD_BI.minus(proportionIdle) // To avoid shareOfTheDelta + proportionIdle > 1 with rounding errors.
+      __MATHS__.indexDiv(
+        __MATHS__.indexMul(p2pDelta, lastPoolIndex),
+        __MATHS__.indexMul(p2pAmount, lastP2PIndex)
+      ),
+      __MATHS__.INDEX_ONE.minus(proportionIdle) // To avoid shareOfTheDelta + proportionIdle > 1 with rounding errors.
     );
 
-    newP2PIndex = lastP2PIndex.times(
-      WAD_BI.minus(shareOfTheDelta)
-        .minus(proportionIdle)
-        .times(p2pGrowthFactor)
-        .plus(shareOfTheDelta.times(poolGrowthFactor))
+    newP2PIndex = __MATHS__.indexMul(
+      lastP2PIndex,
+      __MATHS__
+        .indexMul(__MATHS__.INDEX_ONE.minus(shareOfTheDelta).minus(proportionIdle), p2pGrowthFactor)
+        .plus(__MATHS__.indexMul(shareOfTheDelta, poolGrowthFactor))
         .plus(proportionIdle)
     );
   }
@@ -95,7 +104,8 @@ export function computeP2PSupplyRate(
   p2pDelta: BigInt,
   p2pAmount: BigInt,
   reserveFactor: BigInt,
-  proportionIdle: BigInt
+  proportionIdle: BigInt,
+  __MATHS__: IMaths
 ): BigInt {
   let p2pSupplyRate: BigInt;
   if (poolSupplyRate.gt(poolBorrowRate)) {
@@ -108,13 +118,16 @@ export function computeP2PSupplyRate(
   }
   if (p2pDelta.gt(BigInt.zero()) && p2pAmount.gt(BigInt.zero())) {
     const shareOfTheDelta = minBN(
-      p2pDelta.times(poolIndex).div(p2pAmount.times(p2pIndex)),
-      WAD_BI.minus(proportionIdle) // To avoid shareOfTheDelta > 1 with rounding errors.
+      __MATHS__.indexDiv(
+        __MATHS__.indexMul(p2pDelta, poolIndex),
+        __MATHS__.indexMul(p2pAmount, p2pIndex)
+      ),
+      __MATHS__.INDEX_ONE.minus(proportionIdle) // To avoid shareOfTheDelta > 1 with rounding errors.
     );
 
-    p2pSupplyRate = p2pSupplyRate
-      .times(WAD_BI.minus(shareOfTheDelta).minus(proportionIdle))
-      .plus(poolSupplyRate.times(shareOfTheDelta))
+    p2pSupplyRate = __MATHS__
+      .indexMul(p2pSupplyRate, WAD_BI.minus(shareOfTheDelta).minus(proportionIdle))
+      .plus(__MATHS__.indexMul(poolSupplyRate, shareOfTheDelta))
       .plus(proportionIdle);
   }
   return p2pSupplyRate;
@@ -129,7 +142,8 @@ export function computeP2PBorrowRate(
   p2pDelta: BigInt,
   p2pAmount: BigInt,
   reserveFactor: BigInt,
-  proportionIdle: BigInt
+  proportionIdle: BigInt,
+  __MATHS__: IMaths
 ): BigInt {
   let p2pBorrowRate;
   if (poolSupplyRate.gt(poolBorrowRate)) {
@@ -143,13 +157,16 @@ export function computeP2PBorrowRate(
 
   if (p2pDelta.gt(BigInt.zero()) && p2pAmount.gt(BigInt.zero())) {
     const shareOfTheDelta = minBN(
-      p2pDelta.times(poolIndex).div(p2pAmount.times(p2pIndex)),
-      WAD_BI.minus(proportionIdle) // To avoid shareOfTheDelta > 1 with rounding errors.
+      __MATHS__.indexDiv(
+        __MATHS__.indexMul(p2pDelta, poolIndex),
+        __MATHS__.indexMul(p2pAmount, p2pIndex)
+      ),
+      __MATHS__.INDEX_ONE.minus(proportionIdle) // To avoid shareOfTheDelta > 1 with rounding errors.
     );
 
-    p2pBorrowRate = p2pBorrowRate
-      .times(WAD_BI.minus(shareOfTheDelta).minus(proportionIdle))
-      .plus(poolBorrowRate.times(shareOfTheDelta))
+    p2pBorrowRate = __MATHS__
+      .indexMul(p2pBorrowRate, WAD_BI.minus(shareOfTheDelta).minus(proportionIdle))
+      .plus(__MATHS__.indexMul(poolBorrowRate, shareOfTheDelta))
       .plus(proportionIdle);
   }
   return p2pBorrowRate;
