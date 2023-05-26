@@ -382,6 +382,8 @@ export function handleMarketCreated(event: MarketCreated): void {
 
   market._p2pSupplyIndex = RAY_BI;
   market._p2pBorrowIndex = RAY_BI;
+  market._p2pSupplyIndexInternal = RAY_BI;
+  market._p2pBorrowIndexInternal = RAY_BI;
   market._p2pSupplyRate = BigInt.zero();
   market._p2pBorrowRate = BigInt.zero();
 

@@ -107,6 +107,8 @@ export function handleMarketCreated(event: MarketCreated): void {
 
   market._p2pSupplyIndex = morpho.p2pSupplyIndex(event.params._poolToken);
   market._p2pBorrowIndex = morpho.p2pBorrowIndex(event.params._poolToken);
+  market._p2pSupplyIndexInternal = morpho.p2pSupplyIndex(event.params._poolToken);
+  market._p2pBorrowIndexInternal = morpho.p2pBorrowIndex(event.params._poolToken);
   market._p2pSupplyRate = BigInt.zero();
   market._p2pBorrowRate = BigInt.zero();
 

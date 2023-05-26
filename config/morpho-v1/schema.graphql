@@ -1074,6 +1074,12 @@ type Market @entity {
   " The borrow rate in P2P, updated at the last pool update "
   _p2pBorrowRate: BigInt!
 
+  " The p2p supply index, updated at the last pool update. Used in monitoring "
+  _p2pSupplyIndexInternal: BigInt!
+
+  " The p2p borrow index, updated at the last pool update. Used in monitoring "
+  _p2pBorrowIndexInternal: BigInt!
+
   " The cursor where the p2p rate is calculated from, without conversion "
   _p2pIndexCursor: BigInt!
 
