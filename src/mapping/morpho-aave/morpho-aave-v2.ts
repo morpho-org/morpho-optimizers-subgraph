@@ -32,6 +32,7 @@ import {
 import { BASE_UNITS } from "../../constants";
 import { updateP2PRates } from "../../helpers";
 import { getMarket, getOrInitLendingProtocol } from "../../utils/initializers";
+import { AaveMath } from "../../utils/maths/AaveMath";
 import {
   _handleBorrowed,
   _handleBorrowerPositionUpdated,
@@ -60,21 +61,21 @@ export function handleP2PAmountsUpdated(event: P2PAmountsUpdated): void {
   market._p2pSupplyAmount = event.params._p2pSupplyAmount;
   market._p2pBorrowAmount = event.params._p2pBorrowAmount;
 
-  updateP2PRates(market);
+  updateP2PRates(market, new AaveMath());
   market.save();
 }
 
 export function handleP2PBorrowDeltaUpdated(event: P2PBorrowDeltaUpdated): void {
   const market = getMarket(event.params._poolToken);
   market._p2pBorrowDelta = event.params._p2pBorrowDelta;
-  updateP2PRates(market);
+  updateP2PRates(market, new AaveMath());
   market.save();
 }
 
 export function handleP2PSupplyDeltaUpdated(event: P2PSupplyDeltaUpdated): void {
   const market = getMarket(event.params._poolToken);
   market._p2pSupplyDelta = event.params._p2pSupplyDelta;
-  updateP2PRates(market);
+  updateP2PRates(market, new AaveMath());
   market.save();
 }
 

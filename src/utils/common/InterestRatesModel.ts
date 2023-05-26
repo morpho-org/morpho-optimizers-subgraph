@@ -5,6 +5,8 @@ import { WAD_BI } from "../../constants";
 import PercentMath from "../maths/PercentMath";
 import { IMaths } from "../maths/maths.interface";
 
+import { GrowthFactors } from "./GrowthFactors";
+
 function computeP2PRate(
   poolBorrowRate: BigInt,
   poolSupplyRate: BigInt,
@@ -22,7 +24,7 @@ export function computeGrowthFactors(
   p2pIndexCursor: BigInt,
   reserveFactor: BigInt,
   __MATHS__: IMaths
-) {
+): GrowthFactors {
   const poolSupplyGrowthFactor: BigInt = __MATHS__.indexDiv(
     newPoolSupplyIndex,
     lastSupplyPoolIndex
@@ -54,12 +56,12 @@ export function computeGrowthFactors(
     p2pSupplyGrowthFactor = poolBorrowGrowthFactor;
     p2pBorrowGrowthFactor = poolBorrowGrowthFactor;
   }
-  return {
+  return new GrowthFactors(
     p2pBorrowGrowthFactor,
     p2pSupplyGrowthFactor,
     poolBorrowGrowthFactor,
-    poolSupplyGrowthFactor,
-  };
+    poolSupplyGrowthFactor
+  );
 }
 
 export function computeP2PIndex(
@@ -145,7 +147,7 @@ export function computeP2PBorrowRate(
   proportionIdle: BigInt,
   __MATHS__: IMaths
 ): BigInt {
-  let p2pBorrowRate;
+  let p2pBorrowRate: BigInt;
   if (poolSupplyRate.gt(poolBorrowRate)) {
     p2pBorrowRate = poolBorrowRate;
   } else {

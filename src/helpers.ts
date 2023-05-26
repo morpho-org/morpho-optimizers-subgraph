@@ -976,9 +976,9 @@ export function updateProtocolPosition(protocol: LendingProtocol, market: Market
 
 function computeProportionIdle(market: Market): BigInt {
   const offset = pow10(market._indexesOffset);
-  if (market._idleSupply && market._idleSupply.gt(BigInt.zero())) {
+  if (market._idleSupply && market._idleSupply!.gt(BigInt.zero())) {
     const totalP2PSupplied = market._p2pSupplyAmount.times(market._p2pSupplyIndex).div(offset);
-    const proportionIdle = market._idleSupply.times(offset).div(totalP2PSupplied);
+    const proportionIdle = market._idleSupply!.times(offset).div(totalP2PSupplied);
     if (proportionIdle.gt(offset)) return offset;
     return proportionIdle;
   }

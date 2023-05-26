@@ -7,6 +7,6 @@ import { IMaths } from "./maths.interface";
 
 export class CompoundMath implements IMaths {
   INDEX_ONE: BigInt = WAD_BI;
-  indexMul = WadRayMath.wadMul;
-  indexDiv = WadRayMath.wadDiv;
+  indexMul: (x: BigInt, y: BigInt) => BigInt = WadRayMath.wadMul;
+  indexDiv: (x: BigInt, y: BigInt) => BigInt = WadRayMath.wadDiv;
 }

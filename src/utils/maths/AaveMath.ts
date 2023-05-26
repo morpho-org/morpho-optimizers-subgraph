@@ -7,6 +7,6 @@ import { IMaths } from "./maths.interface";
 
 export class AaveMath implements IMaths {
   INDEX_ONE: BigInt = RAY_BI;
-  indexMul = WadRayMath.rayMul;
-  indexDiv = WadRayMath.rayDiv;
+  indexMul: (x: BigInt, y: BigInt) => BigInt = WadRayMath.rayMul;
+  indexDiv: (x: BigInt, y: BigInt) => BigInt = WadRayMath.rayDiv;
 }
