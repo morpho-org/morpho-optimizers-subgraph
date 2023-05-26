@@ -4,7 +4,8 @@ import {
   CompoundOracle,
   PriceUpdated,
 } from "../../../generated/morpho-v1/templates/CompoundOracle/CompoundOracle";
-import { exponentToBigDecimal, MORPHO_COMPOUND_ADDRESS } from "../../constants";
+import { pow10Decimal } from "../../bn";
+import { MORPHO_COMPOUND_ADDRESS } from "../../constants";
 import { getMarket, getOrInitLendingProtocol, getOrInitToken } from "../../utils/initializers";
 
 export function handlePriceUpdated(event: PriceUpdated): void {
@@ -64,7 +65,7 @@ export function handlePriceUpdated(event: PriceUpdated): void {
   const price = oracle
     .getUnderlyingPrice(marketAddress)
     .toBigDecimal()
-    .div(exponentToBigDecimal(36 - inputToken.decimals));
+    .div(pow10Decimal(36 - inputToken.decimals));
   market.inputTokenPriceUSD = price;
   market.save();
   inputToken.lastPriceUSD = price;

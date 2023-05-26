@@ -5,12 +5,8 @@ import { LendingPoolAddressesProvider } from "../../../generated/morpho-v1/Morph
 import { MorphoAaveV2 } from "../../../generated/morpho-v1/MorphoAaveV2/MorphoAaveV2";
 import { PriceOracle } from "../../../generated/morpho-v1/MorphoAaveV2/PriceOracle";
 import { LendingProtocol, Market } from "../../../generated/morpho-v1/schema";
-import {
-  ETH_USD_PRICE_FEED_ADDRESS,
-  exponentToBigDecimal,
-  MORPHO_AAVE_V2_ADDRESS,
-  readValue,
-} from "../../constants";
+import { pow10Decimal } from "../../bn";
+import { ETH_USD_PRICE_FEED_ADDRESS, MORPHO_AAVE_V2_ADDRESS, readValue } from "../../constants";
 
 export function fetchAssetPrice(market: Market): BigDecimal {
   const inputTokenAddress = Address.fromString(market.inputToken.toHexString());
@@ -38,11 +34,11 @@ export function fetchAssetPrice(market: Market): BigDecimal {
 
   // Mainnet Oracles return the price in eth, must convert to USD through the following method
   const ethPriceFeed = ChainlinkPriceFeed.bind(ETH_USD_PRICE_FEED_ADDRESS);
-  const priceEthInUsd = ethPriceFeed.latestAnswer().toBigDecimal().div(exponentToBigDecimal(8)); // price is in 8 decimals (10^8)
+  const priceEthInUsd = ethPriceFeed.latestAnswer().toBigDecimal().div(pow10Decimal(8)); // price is in 8 decimals (10^8)
 
   if (priceEthInUsd.equals(BigDecimal.zero())) {
     return BigDecimal.zero();
   } else {
-    return oracleResult.toBigDecimal().times(priceEthInUsd).div(exponentToBigDecimal(18));
+    return oracleResult.toBigDecimal().times(priceEthInUsd).div(pow10Decimal(18));
   }
 }

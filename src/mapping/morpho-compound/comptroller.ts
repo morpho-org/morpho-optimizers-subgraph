@@ -10,12 +10,8 @@ import {
   NewCollateralFactor,
   NewPriceOracle,
 } from "../../../generated/morpho-v1/templates/Comptroller/Comptroller";
-import {
-  BIGDECIMAL_ONE,
-  DEFAULT_DECIMALS,
-  exponentToBigDecimal,
-  MORPHO_COMPOUND_ADDRESS,
-} from "../../constants";
+import { pow10Decimal } from "../../bn";
+import { BIGDECIMAL_ONE, DEFAULT_DECIMALS, MORPHO_COMPOUND_ADDRESS } from "../../constants";
 import { getMarket, getOrInitLendingProtocol } from "../../utils/initializers";
 
 export function handleCompBorrowSpeedUpdated(event: CompBorrowSpeedUpdated): void {}
@@ -33,7 +29,7 @@ export function handleNewCloseFactor(event: NewCloseFactor): void {
   const protocol = getOrInitLendingProtocol(MORPHO_COMPOUND_ADDRESS);
   const closeFactor = event.params.newCloseFactorMantissa
     .toBigDecimal()
-    .div(exponentToBigDecimal(DEFAULT_DECIMALS))
+    .div(pow10Decimal(DEFAULT_DECIMALS))
     .minus(BIGDECIMAL_ONE);
   for (let i = 0; i < protocol.markets.length; i++) {
     const market = getMarket(protocol.markets[i]);
@@ -47,7 +43,7 @@ export function handleNewCollateralFactor(event: NewCollateralFactor): void {
   if (market === null) return; // Market not created on Morpho Compound
   market.liquidationThreshold = event.params.newCollateralFactorMantissa
     .toBigDecimal()
-    .div(exponentToBigDecimal(DEFAULT_DECIMALS));
+    .div(pow10Decimal(DEFAULT_DECIMALS));
   market.save();
 }
 

@@ -9,14 +9,8 @@ import {
 } from "../../../generated/morpho-v1/MorphoCompound/MorphoCompound";
 import { Market } from "../../../generated/morpho-v1/schema";
 import { CToken as CTokenTemplate } from "../../../generated/morpho-v1/templates";
-import {
-  BASE_UNITS,
-  BIGDECIMAL_ONE,
-  C_ETH,
-  DEFAULT_DECIMALS,
-  exponentToBigDecimal,
-  WRAPPED_ETH,
-} from "../../constants";
+import { pow10Decimal } from "../../bn";
+import { BASE_UNITS, BIGDECIMAL_ONE, C_ETH, DEFAULT_DECIMALS, WRAPPED_ETH } from "../../constants";
 import {
   getOrInitLendingProtocol,
   getOrInitMarketList,
@@ -40,7 +34,7 @@ export function handleMarketCreated(event: MarketCreated): void {
   const usdPrice = priceOracle
     .getUnderlyingPrice(event.params._poolToken)
     .toBigDecimal()
-    .div(exponentToBigDecimal(36 - inputToken.decimals));
+    .div(pow10Decimal(36 - inputToken.decimals));
   const market = new Market(event.params._poolToken);
   market.protocol = event.address;
   market.name = `Morpho ${cToken.name()}`;
@@ -51,12 +45,12 @@ export function handleMarketCreated(event: MarketCreated): void {
   market.maximumLTV = compMarket
     .getCollateralFactorMantissa()
     .toBigDecimal()
-    .div(exponentToBigDecimal(DEFAULT_DECIMALS));
+    .div(pow10Decimal(DEFAULT_DECIMALS));
   market.liquidationThreshold = market.maximumLTV;
   market.liquidationPenalty = comptroller
     .liquidationIncentiveMantissa()
     .toBigDecimal()
-    .div(exponentToBigDecimal(DEFAULT_DECIMALS))
+    .div(pow10Decimal(DEFAULT_DECIMALS))
     .minus(BIGDECIMAL_ONE);
 
   market.canIsolate = false;

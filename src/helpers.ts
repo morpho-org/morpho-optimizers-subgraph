@@ -16,6 +16,7 @@ import {
   _PositionCounter,
 } from "../generated/morpho-v1/schema";
 
+import { pow10, pow10Decimal } from "./bn";
 import {
   INT_ZERO,
   ActivityType,
@@ -24,17 +25,15 @@ import {
   SECONDS_PER_DAY,
   PositionSide,
   BIGDECIMAL_ONE,
-  wadToRay,
   RAY_BI,
-  exponentToBigDecimal,
   InterestRateSide,
   InterestRateType,
   BIGDECIMAL_HUNDRED,
-  exponentToBigInt,
   BIGINT_ONE,
   BASE_UNITS_BI,
 } from "./constants";
 import { getMarket, getOrInitToken } from "./utils/initializers";
+import WadRayMath from "./utils/maths/WadRayMath";
 
 function getDay(timestamp: BigInt): BigInt {
   return timestamp.div(BigInt.fromI32(SECONDS_PER_DAY));
@@ -867,7 +866,7 @@ function snapshotPosition(position: Position, event: ethereum.Event): void {
   snapshot.balance = position.balance;
   snapshot.balanceUSD = totalBalance
     .toBigDecimal()
-    .div(exponentToBigDecimal(inputToken.decimals))
+    .div(pow10Decimal(inputToken.decimals))
     .times(market.inputTokenPriceUSD);
   snapshot.blockNumber = event.block.number;
   snapshot.timestamp = event.block.timestamp;
@@ -875,11 +874,11 @@ function snapshotPosition(position: Position, event: ethereum.Event): void {
   snapshot.balanceInP2P = balanceInP2P;
   snapshot.balanceOnPoolUSD = balanceOnPool
     .toBigDecimal()
-    .times(exponentToBigDecimal(inputToken.decimals))
+    .times(pow10Decimal(inputToken.decimals))
     .times(market.inputTokenPriceUSD);
   snapshot.balanceInP2PUSD = balanceInP2P
     .toBigDecimal()
-    .times(exponentToBigDecimal(inputToken.decimals))
+    .times(pow10Decimal(inputToken.decimals))
     .times(market.inputTokenPriceUSD);
 
   snapshot.save();
@@ -895,29 +894,29 @@ export function updateProtocolPosition(protocol: LendingProtocol, market: Market
 
   const newMarketSupplyOnPool_BI = market._scaledSupplyOnPool
     .times(market._reserveSupplyIndex)
-    .div(exponentToBigInt(market._indexesOffset));
+    .div(pow10(market._indexesOffset));
 
   const newMarketSupplyOnPool = newMarketSupplyOnPool_BI
     .toBigDecimal()
-    .div(exponentToBigDecimal(inputToken.decimals));
+    .div(pow10Decimal(inputToken.decimals));
 
   const newMarketSupplyInP2P_BI = market._scaledSupplyInP2P
     .times(market._p2pSupplyIndex)
-    .div(exponentToBigInt(market._indexesOffset));
+    .div(pow10(market._indexesOffset));
 
   const newMarketSupplyInP2P = newMarketSupplyInP2P_BI
     .toBigDecimal()
-    .div(exponentToBigDecimal(inputToken.decimals));
+    .div(pow10Decimal(inputToken.decimals));
 
   const newMarketSupplyCollateral_BI = market._scaledPoolCollateral
     ? market
         ._scaledPoolCollateral!.times(market._reserveSupplyIndex)
-        .div(exponentToBigInt(market._indexesOffset))
+        .div(pow10(market._indexesOffset))
     : BigInt.zero();
 
   const newMarketSupplyCollateral = newMarketSupplyCollateral_BI
     .toBigDecimal()
-    .div(exponentToBigDecimal(inputToken.decimals));
+    .div(pow10Decimal(inputToken.decimals));
 
   const newMarketSupplyUSD = newMarketSupplyOnPool
     .plus(newMarketSupplyInP2P)
@@ -926,19 +925,19 @@ export function updateProtocolPosition(protocol: LendingProtocol, market: Market
 
   const newMarketBorrowOnPool_BI = market._scaledBorrowOnPool
     .times(market._reserveBorrowIndex)
-    .div(exponentToBigInt(market._indexesOffset));
+    .div(pow10(market._indexesOffset));
 
   const newMarketBorrowOnPool = newMarketBorrowOnPool_BI
     .toBigDecimal()
-    .div(exponentToBigDecimal(inputToken.decimals));
+    .div(pow10Decimal(inputToken.decimals));
 
   const newMarketBorrowInP2P_BI = market._scaledBorrowInP2P
     .times(market._p2pBorrowIndex)
-    .div(exponentToBigInt(market._indexesOffset));
+    .div(pow10(market._indexesOffset));
 
   const newMarketBorrowInP2P = newMarketBorrowInP2P_BI
     .toBigDecimal()
-    .div(exponentToBigDecimal(inputToken.decimals));
+    .div(pow10Decimal(inputToken.decimals));
 
   const newMarketBorrowUSD = newMarketBorrowOnPool
     .plus(newMarketBorrowInP2P)
@@ -974,8 +973,8 @@ export function updateProtocolPosition(protocol: LendingProtocol, market: Market
 
 export function updateP2PRates(market: Market): void {
   let proportionIdle = BigInt.zero();
-  const offset = exponentToBigInt(market._indexesOffset);
-  const offsetBD = exponentToBigDecimal(market._indexesOffset);
+  const offset = pow10(market._indexesOffset);
+  const offsetBD = pow10Decimal(market._indexesOffset);
   if (market._idleSupply && market._idleSupply!.gt(BigInt.zero())) {
     const totalP2PSupplied = market._p2pSupplyAmount.times(market._p2pSupplyIndex).div(offset);
     proportionIdle = market._idleSupply!.times(offset).div(totalP2PSupplied);
@@ -1004,9 +1003,9 @@ export function updateP2PRates(market: Market): void {
     : midRate;
   let p2pSupplyRateWithDelta = p2pSupplyRateWithFees;
   if (market._p2pSupplyDelta.gt(BigInt.zero()) && market._p2pSupplyAmount.gt(BigInt.zero())) {
-    let shareOfTheDelta = wadToRay(market._p2pSupplyDelta)
+    let shareOfTheDelta = WadRayMath.wadToRay(market._p2pSupplyDelta)
       .times(market._reserveSupplyIndex)
-      .div(wadToRay(market._p2pSupplyAmount).times(market._p2pSupplyIndex).div(offset));
+      .div(WadRayMath.wadToRay(market._p2pSupplyAmount).times(market._p2pSupplyIndex).div(offset));
     if (shareOfTheDelta.gt(offset.minus(proportionIdle))) shareOfTheDelta = offset;
     p2pSupplyRateWithDelta = p2pSupplyRateWithFees
       .times(BIGINT_ONE.times(offset).minus(shareOfTheDelta).minus(proportionIdle))
@@ -1015,9 +1014,9 @@ export function updateP2PRates(market: Market): void {
   }
   let p2pBorrowRateWithDelta = p2pBorrowRateWithFees;
   if (market._p2pBorrowDelta.gt(BigInt.zero()) && market._p2pBorrowAmount.gt(BigInt.zero())) {
-    let shareOfTheDelta = wadToRay(market._p2pBorrowDelta)
+    let shareOfTheDelta = WadRayMath.wadToRay(market._p2pBorrowDelta)
       .times(market._reserveBorrowIndex)
-      .div(wadToRay(market._p2pBorrowAmount).times(market._p2pBorrowIndex).div(offset));
+      .div(WadRayMath.wadToRay(market._p2pBorrowAmount).times(market._p2pBorrowIndex).div(offset));
     if (shareOfTheDelta.gt(offset)) shareOfTheDelta = offset;
     p2pBorrowRateWithDelta = p2pBorrowRateWithFees
       .times(BIGINT_ONE.times(offset).minus(shareOfTheDelta))

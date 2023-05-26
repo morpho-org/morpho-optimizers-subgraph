@@ -11,11 +11,10 @@ import {
   Repay,
   Withdraw,
 } from "../../generated/morpho-v1/schema";
+import { pow10, pow10Decimal } from "../bn";
 import {
   BIGDECIMAL_HUNDRED,
   EventType,
-  exponentToBigDecimal,
-  exponentToBigInt,
   InterestRateSide,
   InterestRateType,
   MORPHO_AAVE_V3_ADDRESS,
@@ -102,10 +101,10 @@ export function _handleSupplied(
 
   const totalSupplyOnPool = balanceOnPool
     .times(market._lastPoolSupplyIndex)
-    .div(exponentToBigInt(market._indexesOffset));
+    .div(pow10(market._indexesOffset));
   const totalSupplyInP2P = balanceInP2P
     .times(market._p2pSupplyIndex)
-    .div(exponentToBigInt(market._indexesOffset));
+    .div(pow10(market._indexesOffset));
 
   position.balance = totalSupplyOnPool.plus(totalSupplyInP2P);
 
@@ -123,7 +122,7 @@ export function _handleSupplied(
   deposit.amount = amount;
   deposit.amountUSD = amount
     .toBigDecimal()
-    .div(exponentToBigDecimal(inputToken.decimals))
+    .div(pow10Decimal(inputToken.decimals))
     .times(market.inputTokenPriceUSD);
   deposit.isCollateral = isCollateral;
   deposit.gasPrice = event.transaction.gasPrice;
@@ -192,10 +191,10 @@ export function _handleWithdrawn(
 
   const totalSupplyOnPool = balanceOnPool
     .times(market._lastPoolSupplyIndex)
-    .div(exponentToBigInt(market._indexesOffset));
+    .div(pow10(market._indexesOffset));
   const totalSupplyInP2P = balanceInP2P
     .times(market._p2pSupplyIndex)
-    .div(exponentToBigInt(market._indexesOffset));
+    .div(pow10(market._indexesOffset));
   const balance = totalSupplyOnPool.plus(totalSupplyInP2P);
 
   const position = subtractPosition(
@@ -255,7 +254,7 @@ export function _handleWithdrawn(
   withdraw.amount = amount;
   withdraw.amountUSD = amount
     .toBigDecimal()
-    .div(exponentToBigDecimal(inputToken.decimals))
+    .div(pow10Decimal(inputToken.decimals))
     .times(market.inputTokenPriceUSD);
   withdraw.isCollateral = isCollateral;
   withdraw.gasPrice = event.transaction.gasPrice;
@@ -451,12 +450,12 @@ export function _handleLiquidated(
   liquidate.amount = amountSeized;
   liquidate.amountUSD = amountSeized
     .toBigDecimal()
-    .div(exponentToBigDecimal(inputToken.decimals))
+    .div(pow10Decimal(inputToken.decimals))
     .times(collateralMarket.inputTokenPriceUSD);
   liquidate.profitUSD = liquidate.amountUSD.minus(
     amountRepaid
       .toBigDecimal()
-      .div(exponentToBigDecimal(debtAsset.decimals))
+      .div(pow10Decimal(debtAsset.decimals))
       .times(repayTokenMarket.inputTokenPriceUSD)
   );
   liquidate.save();
@@ -555,12 +554,8 @@ export function _handleBorrowed(
   position.balanceInP2P = inP2P;
   position._virtualP2P = virtualP2P;
 
-  const borrowOnPool = onPool
-    .times(market._lastPoolBorrowIndex)
-    .div(exponentToBigInt(market._indexesOffset));
-  const borrowInP2P = inP2P
-    .times(market._p2pBorrowIndex)
-    .div(exponentToBigInt(market._indexesOffset));
+  const borrowOnPool = onPool.times(market._lastPoolBorrowIndex).div(pow10(market._indexesOffset));
+  const borrowInP2P = inP2P.times(market._p2pBorrowIndex).div(pow10(market._indexesOffset));
   position.balance = borrowOnPool.plus(borrowInP2P);
   position.save();
 
@@ -576,7 +571,7 @@ export function _handleBorrowed(
   borrow.amount = amount;
   borrow.amountUSD = amount
     .toBigDecimal()
-    .div(exponentToBigDecimal(inputToken.decimals))
+    .div(pow10Decimal(inputToken.decimals))
     .times(market.inputTokenPriceUSD);
   borrow.gasPrice = event.transaction.gasPrice;
   borrow.gasLimit = event.transaction.gasLimit;
@@ -636,48 +631,48 @@ export function _handleP2PIndexesUpdated(
   const supplyDeltaIndexes = poolSupplyIndex
     .minus(market._lastPoolSupplyIndex)
     .toBigDecimal()
-    .div(exponentToBigDecimal(market._indexesOffset));
+    .div(pow10Decimal(market._indexesOffset));
 
   const poolSupplyInterest = supplyDeltaIndexes
     .times(totalSupplyOnPool.toBigDecimal())
-    .div(exponentToBigDecimal(inputToken.decimals));
+    .div(pow10Decimal(inputToken.decimals));
 
   const virtualSupplyInterest = supplyDeltaIndexes
     .times(market._virtualScaledSupply.toBigDecimal())
-    .div(exponentToBigDecimal(inputToken.decimals));
+    .div(pow10Decimal(inputToken.decimals));
 
   market._lastPoolSupplyIndex = poolSupplyIndex;
 
   const p2pSupplyInterest = p2pSupplyIndex
     .minus(market._p2pSupplyIndex)
     .toBigDecimal()
-    .div(exponentToBigDecimal(market._indexesOffset))
+    .div(pow10Decimal(market._indexesOffset))
     .times(market._scaledSupplyInP2P.toBigDecimal())
-    .div(exponentToBigDecimal(inputToken.decimals));
+    .div(pow10Decimal(inputToken.decimals));
 
   market._p2pSupplyIndex = p2pSupplyIndex;
 
   const borrowDeltaIndexes = poolBorrowIndex
     .minus(market._lastPoolBorrowIndex)
     .toBigDecimal()
-    .div(exponentToBigDecimal(market._indexesOffset));
+    .div(pow10Decimal(market._indexesOffset));
 
   const poolBorrowInterest = borrowDeltaIndexes
     .times(market._scaledBorrowOnPool.toBigDecimal())
-    .div(exponentToBigDecimal(inputToken.decimals));
+    .div(pow10Decimal(inputToken.decimals));
 
   const virtualBorrowInterest = borrowDeltaIndexes
     .times(market._virtualScaledBorrow.toBigDecimal())
-    .div(exponentToBigDecimal(inputToken.decimals));
+    .div(pow10Decimal(inputToken.decimals));
 
   market._lastPoolBorrowIndex = poolBorrowIndex;
 
   const p2pBorrowInterest = p2pBorrowIndex
     .minus(market._p2pBorrowIndex)
     .toBigDecimal()
-    .div(exponentToBigDecimal(market._indexesOffset))
+    .div(pow10Decimal(market._indexesOffset))
     .times(market._scaledBorrowInP2P.toBigDecimal())
-    .div(exponentToBigDecimal(inputToken.decimals));
+    .div(pow10Decimal(inputToken.decimals));
 
   market._p2pBorrowIndex = p2pBorrowIndex;
 
@@ -796,10 +791,8 @@ export function _handleRepaid(
 
   const borrowOnPool = balanceOnPool
     .times(market._lastPoolBorrowIndex)
-    .div(exponentToBigInt(market._indexesOffset));
-  const borrowInP2P = balanceInP2P
-    .times(market._p2pBorrowIndex)
-    .div(exponentToBigInt(market._indexesOffset));
+    .div(pow10(market._indexesOffset));
+  const borrowInP2P = balanceInP2P.times(market._p2pBorrowIndex).div(pow10(market._indexesOffset));
   const balance = borrowOnPool.plus(borrowInP2P);
 
   const position = subtractPosition(
@@ -848,7 +841,7 @@ export function _handleRepaid(
   repay.amount = amount;
   repay.amountUSD = amount
     .toBigDecimal()
-    .div(exponentToBigDecimal(inputToken.decimals))
+    .div(pow10Decimal(inputToken.decimals))
     .times(market.inputTokenPriceUSD);
   repay.gasPrice = event.transaction.gasPrice;
   repay.gasLimit = event.transaction.gasLimit;
@@ -913,13 +906,9 @@ export function _handleReserveUpdate(params: ReserveUpdateParams): void {
   market._lastReserveUpdate = params.event.block.timestamp;
 
   // update rates as APR as it is done for aave subgraphs
-  const supplyRate = params.poolSupplyRate
-    .toBigDecimal()
-    .div(exponentToBigDecimal(market._indexesOffset));
+  const supplyRate = params.poolSupplyRate.toBigDecimal().div(pow10Decimal(market._indexesOffset));
 
-  const borrowRate = params.poolBorrowRate
-    .toBigDecimal()
-    .div(exponentToBigDecimal(market._indexesOffset));
+  const borrowRate = params.poolBorrowRate.toBigDecimal().div(pow10Decimal(market._indexesOffset));
   const poolSupplyRate = createInterestRate(
     market.id,
     InterestRateSide.LENDER,

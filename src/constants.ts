@@ -1,13 +1,51 @@
 import { Address, BigDecimal, BigInt, Bytes, ethereum } from "@graphprotocol/graph-ts";
 
+///////////////////
+///// Numbers /////
+///////////////////
+
+export const INT_NEGATIVE_ONE = -1 as i32;
+export const INT_ZERO = 0 as i32;
+export const INT_ONE = 1 as i32;
+export const INT_TWO = 2 as i32;
+export const INT_FOUR = 4 as i32;
+
+export const BIGINT_ONE = BigInt.fromI32(1);
+export const BIGINT_TWO = BigInt.fromI32(2);
+export const BIGINT_THREE = BigInt.fromI32(3);
+
+export const BIGINT_TEN_TO_EIGHTEENTH = BigInt.fromString("10").pow(18);
+
+export const BIGDECIMAL_ZERO = new BigDecimal(BigInt.zero());
+export const BIGDECIMAL_ONE = new BigDecimal(BIGINT_ONE);
+export const BIGDECIMAL_THREE = new BigDecimal(BIGINT_THREE);
+export const BIGDECIMAL_HUNDRED = new BigDecimal(BigInt.fromI32(100));
+
+export const DEFAULT_DECIMALS = 18;
+export const RAY_OFFSET = 27;
+export const SECONDS_PER_HOUR = 60 * 60;
+export const SECONDS_PER_DAY = 60 * 60 * 24;
+
+export const BLOCKS_PER_YEAR = BigInt.fromI32(2632320 as i32); // 7200 blocks per day
+
+///////////////////////////////
+///// Protocols variables /////
+///////////////////////////////
+
 export const BASE_UNITS = BigDecimal.fromString("10000");
 export const BASE_UNITS_BI = BigInt.fromString("10000");
+export const HALF_UNITS_BI = BASE_UNITS_BI.div(BIGINT_TWO);
 export const WAD = BigDecimal.fromString("1000000000000000000");
 export const WAD_BI = BigInt.fromString("1000000000000000000");
+export const HALF_WAD_BI = WAD_BI.div(BIGINT_TWO);
 
 export const RAY = BigDecimal.fromString("1000000000000000000000000000");
 
 export const RAY_BI = BigInt.fromString("1000000000000000000000000000");
+export const HALF_RAY_BI = RAY_BI.div(BIGINT_TWO);
+
+export const WAD_RAY_RATIO = BigInt.fromI32(10).pow(9);
+export const HALF_WAD_RAY_RATIO = WAD_RAY_RATIO.div(BIGINT_TWO);
 
 export const AAVE_V3_ORACLE_OFFSET = BigDecimal.fromString("100000000"); // 1e8
 
@@ -86,66 +124,12 @@ export const ETH_USD_PRICE_FEED_ADDRESS = Address.fromBytes(
   Bytes.fromHexString("0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419")
 );
 
-///////////////////
-///// Numbers /////
-///////////////////
-
-export const INT_NEGATIVE_ONE = -1 as i32;
-export const INT_ZERO = 0 as i32;
-export const INT_ONE = 1 as i32;
-export const INT_TWO = 2 as i32;
-export const INT_FOUR = 4 as i32;
-
-export const BIGINT_ONE = BigInt.fromI32(1);
-export const BIGINT_THREE = BigInt.fromI32(3);
-
-export const BIGINT_TEN_TO_EIGHTEENTH = BigInt.fromString("10").pow(18);
-
-export const BIGDECIMAL_ZERO = new BigDecimal(BigInt.zero());
-export const BIGDECIMAL_ONE = new BigDecimal(BIGINT_ONE);
-export const BIGDECIMAL_THREE = new BigDecimal(BIGINT_THREE);
-export const BIGDECIMAL_HUNDRED = new BigDecimal(BigInt.fromI32(100));
-
-export const DEFAULT_DECIMALS = 18;
-export const RAY_OFFSET = 27;
-export const SECONDS_PER_HOUR = 60 * 60;
-export const SECONDS_PER_DAY = 60 * 60 * 24;
-
-export const BLOCKS_PER_YEAR = BigInt.fromI32(2632320 as i32); // 7200 blocks per day
-
 /////////////////////////////
 ///// Utility Functions /////
 /////////////////////////////
 
 export function readValue<T>(callResult: ethereum.CallResult<T>, defaultValue: T): T {
   return callResult.reverted ? defaultValue : callResult.value;
-}
-
-export function rayToWad(a: BigInt): BigInt {
-  const halfRatio = BigInt.fromI32(10).pow(9).div(BigInt.fromI32(2));
-  return halfRatio.plus(a).div(BigInt.fromI32(10).pow(9));
-}
-
-export function wadToRay(a: BigInt): BigInt {
-  return a.times(BigInt.fromI32(10).pow(9));
-}
-
-// n => 10^n
-export function exponentToBigDecimal(decimals: i32): BigDecimal {
-  let result = BIGINT_ONE;
-  const ten = BigInt.fromI32(10);
-  for (let i = 0; i < decimals; i++) {
-    result = result.times(ten);
-  }
-  return result.toBigDecimal();
-}
-export function exponentToBigInt(decimals: i32): BigInt {
-  let result = BIGINT_ONE;
-  const ten = BigInt.fromI32(10);
-  for (let i = 0; i < decimals; i++) {
-    result = result.times(ten);
-  }
-  return result;
 }
 
 export function equalsIgnoreCase(a: string, b: string): boolean {
