@@ -114,6 +114,10 @@ export function handleMarketCreated(event: MarketCreated): void {
 
   market._p2pSupplyIndex = morpho.p2pSupplyIndex(event.params._poolToken);
   market._p2pBorrowIndex = morpho.p2pBorrowIndex(event.params._poolToken);
+  market._p2pSupplyIndexInternal = morpho.p2pSupplyIndex(event.params._poolToken);
+  market._p2pBorrowIndexInternal = morpho.p2pBorrowIndex(event.params._poolToken);
+  market._p2pSupplyRate = BigInt.zero();
+  market._p2pBorrowRate = BigInt.zero();
 
   market._lastPoolSupplyIndex = morphoPoolIndexes.getPoolSupplyIndex();
   market._lastPoolBorrowIndex = morphoPoolIndexes.getPoolBorrowIndex();
@@ -128,12 +132,12 @@ export function handleMarketCreated(event: MarketCreated): void {
 
   market.isP2PDisabled = morphoMarket.getIsP2PDisabled();
 
-  market.reserveFactor = BigInt.fromI32(morphoMarket.getReserveFactor())
-    .toBigDecimal()
-    .div(BASE_UNITS);
-  market.p2pIndexCursor = BigInt.fromI32(morphoMarket.getP2pIndexCursor())
-    .toBigDecimal()
-    .div(BASE_UNITS);
+  const reserveFactor = BigInt.fromI32(morphoMarket.getReserveFactor());
+  const p2pIndexCursor = BigInt.fromI32(morphoMarket.getP2pIndexCursor());
+  market.reserveFactor = reserveFactor.toBigDecimal().div(BASE_UNITS);
+  market._reserveFactor_BI = reserveFactor;
+  market.p2pIndexCursor = p2pIndexCursor.toBigDecimal().div(BASE_UNITS);
+  market._p2pIndexCursor_BI = p2pIndexCursor;
 
   market.totalSupplyOnPool = BigDecimal.zero();
   market.totalBorrowOnPool = BigDecimal.zero();

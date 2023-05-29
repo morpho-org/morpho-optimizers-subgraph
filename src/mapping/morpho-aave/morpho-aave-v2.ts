@@ -32,6 +32,7 @@ import {
 import { BASE_UNITS } from "../../constants";
 import { updateP2PRates } from "../../helpers";
 import { getMarket, getOrInitLendingProtocol } from "../../utils/initializers";
+import { AaveMath } from "../../utils/maths/AaveMath";
 import {
   _handleBorrowed,
   _handleBorrowerPositionUpdated,
@@ -60,21 +61,21 @@ export function handleP2PAmountsUpdated(event: P2PAmountsUpdated): void {
   market._p2pSupplyAmount = event.params._p2pSupplyAmount;
   market._p2pBorrowAmount = event.params._p2pBorrowAmount;
 
-  updateP2PRates(market);
+  updateP2PRates(market, new AaveMath());
   market.save();
 }
 
 export function handleP2PBorrowDeltaUpdated(event: P2PBorrowDeltaUpdated): void {
   const market = getMarket(event.params._poolToken);
   market._p2pBorrowDelta = event.params._p2pBorrowDelta;
-  updateP2PRates(market);
+  updateP2PRates(market, new AaveMath());
   market.save();
 }
 
 export function handleP2PSupplyDeltaUpdated(event: P2PSupplyDeltaUpdated): void {
   const market = getMarket(event.params._poolToken);
   market._p2pSupplyDelta = event.params._p2pSupplyDelta;
-  updateP2PRates(market);
+  updateP2PRates(market, new AaveMath());
   market.save();
 }
 
@@ -221,7 +222,9 @@ export function handleOwnershipTransferred(event: OwnershipTransferred): void {
 
 export function handleP2PIndexCursorSet(event: P2PIndexCursorSet): void {
   const market = getMarket(event.params._poolToken);
-  market.p2pIndexCursor = BigInt.fromI32(event.params._newValue).toBigDecimal().div(BASE_UNITS);
+  const p2pIndexCursor = BigInt.fromI32(event.params._newValue);
+  market.p2pIndexCursor = p2pIndexCursor.toBigDecimal().div(BASE_UNITS);
+  market._p2pIndexCursor_BI = p2pIndexCursor;
   market.save();
 }
 
@@ -249,7 +252,9 @@ export function handlePauseStatusSet(event: PauseStatusSet): void {
 }
 export function handleReserveFactorSet(event: ReserveFactorSet): void {
   const market = getMarket(event.params._poolToken);
-  market.reserveFactor = BigInt.fromI32(event.params._newValue).toBigDecimal().div(BASE_UNITS);
+  const reserveFactor = BigInt.fromI32(event.params._newValue);
+  market.reserveFactor = reserveFactor.toBigDecimal().div(BASE_UNITS);
+  market._reserveFactor_BI = reserveFactor;
   market.save();
 }
 

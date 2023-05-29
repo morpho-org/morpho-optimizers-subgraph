@@ -16,6 +16,7 @@ import {
   _PositionCounter,
 } from "../generated/morpho-v1/schema";
 
+import { pow10, pow10Decimal } from "./bn";
 import {
   INT_ZERO,
   ActivityType,
@@ -23,16 +24,19 @@ import {
   SECONDS_PER_HOUR,
   SECONDS_PER_DAY,
   PositionSide,
-  BIGDECIMAL_ONE,
-  wadToRay,
   RAY_BI,
-  exponentToBigDecimal,
   InterestRateSide,
   InterestRateType,
   BIGDECIMAL_HUNDRED,
-  exponentToBigInt,
 } from "./constants";
+import {
+  computeGrowthFactors,
+  computeP2PBorrowRate,
+  computeP2PIndex,
+  computeP2PSupplyRate,
+} from "./utils/common/InterestRatesModel";
 import { getMarket, getOrInitToken } from "./utils/initializers";
+import { IMaths } from "./utils/maths/maths.interface";
 
 function getDay(timestamp: BigInt): BigInt {
   return timestamp.div(BigInt.fromI32(SECONDS_PER_DAY));
@@ -865,7 +869,7 @@ function snapshotPosition(position: Position, event: ethereum.Event): void {
   snapshot.balance = position.balance;
   snapshot.balanceUSD = totalBalance
     .toBigDecimal()
-    .div(exponentToBigDecimal(inputToken.decimals))
+    .div(pow10Decimal(inputToken.decimals))
     .times(market.inputTokenPriceUSD);
   snapshot.blockNumber = event.block.number;
   snapshot.timestamp = event.block.timestamp;
@@ -873,11 +877,11 @@ function snapshotPosition(position: Position, event: ethereum.Event): void {
   snapshot.balanceInP2P = balanceInP2P;
   snapshot.balanceOnPoolUSD = balanceOnPool
     .toBigDecimal()
-    .times(exponentToBigDecimal(inputToken.decimals))
+    .times(pow10Decimal(inputToken.decimals))
     .times(market.inputTokenPriceUSD);
   snapshot.balanceInP2PUSD = balanceInP2P
     .toBigDecimal()
-    .times(exponentToBigDecimal(inputToken.decimals))
+    .times(pow10Decimal(inputToken.decimals))
     .times(market.inputTokenPriceUSD);
 
   snapshot.save();
@@ -893,29 +897,29 @@ export function updateProtocolPosition(protocol: LendingProtocol, market: Market
 
   const newMarketSupplyOnPool_BI = market._scaledSupplyOnPool
     .times(market._reserveSupplyIndex)
-    .div(exponentToBigInt(market._indexesOffset));
+    .div(pow10(market._indexesOffset));
 
   const newMarketSupplyOnPool = newMarketSupplyOnPool_BI
     .toBigDecimal()
-    .div(exponentToBigDecimal(inputToken.decimals));
+    .div(pow10Decimal(inputToken.decimals));
 
   const newMarketSupplyInP2P_BI = market._scaledSupplyInP2P
     .times(market._p2pSupplyIndex)
-    .div(exponentToBigInt(market._indexesOffset));
+    .div(pow10(market._indexesOffset));
 
   const newMarketSupplyInP2P = newMarketSupplyInP2P_BI
     .toBigDecimal()
-    .div(exponentToBigDecimal(inputToken.decimals));
+    .div(pow10Decimal(inputToken.decimals));
 
   const newMarketSupplyCollateral_BI = market._scaledPoolCollateral
     ? market
         ._scaledPoolCollateral!.times(market._reserveSupplyIndex)
-        .div(exponentToBigInt(market._indexesOffset))
+        .div(pow10(market._indexesOffset))
     : BigInt.zero();
 
   const newMarketSupplyCollateral = newMarketSupplyCollateral_BI
     .toBigDecimal()
-    .div(exponentToBigDecimal(inputToken.decimals));
+    .div(pow10Decimal(inputToken.decimals));
 
   const newMarketSupplyUSD = newMarketSupplyOnPool
     .plus(newMarketSupplyInP2P)
@@ -924,19 +928,19 @@ export function updateProtocolPosition(protocol: LendingProtocol, market: Market
 
   const newMarketBorrowOnPool_BI = market._scaledBorrowOnPool
     .times(market._reserveBorrowIndex)
-    .div(exponentToBigInt(market._indexesOffset));
+    .div(pow10(market._indexesOffset));
 
   const newMarketBorrowOnPool = newMarketBorrowOnPool_BI
     .toBigDecimal()
-    .div(exponentToBigDecimal(inputToken.decimals));
+    .div(pow10Decimal(inputToken.decimals));
 
   const newMarketBorrowInP2P_BI = market._scaledBorrowInP2P
     .times(market._p2pBorrowIndex)
-    .div(exponentToBigInt(market._indexesOffset));
+    .div(pow10(market._indexesOffset));
 
   const newMarketBorrowInP2P = newMarketBorrowInP2P_BI
     .toBigDecimal()
-    .div(exponentToBigDecimal(inputToken.decimals));
+    .div(pow10Decimal(inputToken.decimals));
 
   const newMarketBorrowUSD = newMarketBorrowOnPool
     .plus(newMarketBorrowInP2P)
@@ -970,67 +974,85 @@ export function updateProtocolPosition(protocol: LendingProtocol, market: Market
   market.save();
 }
 
-export function updateP2PRates(market: Market): void {
-  let proportionIdle = BigInt.zero();
-  const offset = exponentToBigInt(market._indexesOffset);
-  const offsetBD = exponentToBigDecimal(market._indexesOffset);
+function computeProportionIdle(market: Market): BigInt {
+  const offset = pow10(market._indexesOffset);
   if (market._idleSupply && market._idleSupply!.gt(BigInt.zero())) {
     const totalP2PSupplied = market._p2pSupplyAmount.times(market._p2pSupplyIndex).div(offset);
-    proportionIdle = market._idleSupply!.times(offset).div(totalP2PSupplied);
-    if (proportionIdle.gt(offset)) proportionIdle = offset;
+    const proportionIdle = market._idleSupply!.times(offset).div(totalP2PSupplied);
+    if (proportionIdle.gt(offset)) return offset;
+    return proportionIdle;
   }
+  return BigInt.zero();
+}
 
-  const supplyRate = market._poolSupplyRate.toBigDecimal().div(offsetBD);
-  const borrowRate = market._poolBorrowRate.toBigDecimal().div(offsetBD);
-  let midRate: BigDecimal;
-
-  if (borrowRate.lt(supplyRate)) midRate = borrowRate;
-  else {
-    midRate = BIGDECIMAL_ONE.minus(market.p2pIndexCursor)
-      .times(supplyRate)
-      .plus(borrowRate.times(market.p2pIndexCursor));
-  }
-  const p2pSupplyRateWithFees = market.reserveFactor
-    ? midRate.minus(midRate.minus(supplyRate).times(market.reserveFactor))
-    : midRate;
-  const p2pBorrowRateWithFees = market.reserveFactor
-    ? midRate.plus(borrowRate.minus(midRate).times(market.reserveFactor))
-    : midRate;
-  let p2pSupplyRateWithDelta = p2pSupplyRateWithFees;
-  if (market._p2pSupplyDelta.gt(BigInt.zero()) && market._p2pSupplyAmount.gt(BigInt.zero())) {
-    let shareOfTheDelta = wadToRay(market._p2pSupplyDelta)
-      .times(market._reserveSupplyIndex)
-      .div(wadToRay(market._p2pSupplyAmount).times(market._p2pSupplyIndex).div(offset));
-    if (shareOfTheDelta.gt(offset.minus(proportionIdle))) shareOfTheDelta = offset;
-    const sotd = shareOfTheDelta.toBigDecimal().div(offsetBD);
-    const idleBD = proportionIdle.toBigDecimal().div(offsetBD);
-    p2pSupplyRateWithDelta = p2pSupplyRateWithFees
-      .times(BIGDECIMAL_ONE.minus(sotd).minus(idleBD))
-      .plus(supplyRate.times(sotd).plus(idleBD));
-  }
-  let p2pBorrowRateWithDelta = p2pBorrowRateWithFees;
-  if (market._p2pBorrowDelta.gt(BigInt.zero()) && market._p2pBorrowAmount.gt(BigInt.zero())) {
-    let shareOfTheDelta = wadToRay(market._p2pBorrowDelta)
-      .times(market._reserveBorrowIndex)
-      .div(wadToRay(market._p2pBorrowAmount).times(market._p2pBorrowIndex).div(offset));
-    if (shareOfTheDelta.gt(offset)) shareOfTheDelta = offset;
-    const sotd = shareOfTheDelta.toBigDecimal().div(offsetBD);
-    p2pBorrowRateWithDelta = p2pBorrowRateWithFees
-      .times(BIGDECIMAL_ONE.minus(sotd))
-      .plus(borrowRate.times(sotd));
-  }
+export function updateP2PRates(market: Market, __MATHS__: IMaths): void {
+  const offset = BigInt.fromI32(market._indexesOffset).toBigDecimal();
+  const proportionIdle = computeProportionIdle(market);
+  const growthFactors = computeGrowthFactors(
+    market._reserveSupplyIndex,
+    market._reserveBorrowIndex,
+    market._lastPoolSupplyIndex,
+    market._lastPoolBorrowIndex,
+    market._p2pIndexCursor_BI,
+    market._reserveFactor_BI,
+    __MATHS__
+  );
+  market._p2pSupplyIndexInternal = computeP2PIndex(
+    market._lastPoolSupplyIndex,
+    market._p2pSupplyIndex,
+    growthFactors.p2pSupplyGrowthFactor,
+    growthFactors.poolSupplyGrowthFactor,
+    market._p2pSupplyDelta,
+    market._p2pSupplyAmount,
+    proportionIdle,
+    __MATHS__
+  );
+  market._p2pBorrowIndexInternal = computeP2PIndex(
+    market._lastPoolBorrowIndex,
+    market._p2pBorrowIndex,
+    growthFactors.p2pBorrowGrowthFactor,
+    growthFactors.poolBorrowGrowthFactor,
+    market._p2pBorrowDelta,
+    market._p2pBorrowAmount,
+    proportionIdle,
+    __MATHS__
+  );
+  market._p2pBorrowRate = computeP2PBorrowRate(
+    market._poolBorrowRate,
+    market._poolSupplyRate,
+    market._lastPoolBorrowIndex,
+    market._p2pBorrowIndexInternal,
+    market._p2pIndexCursor_BI,
+    market._p2pBorrowDelta,
+    market._p2pSupplyAmount,
+    market._reserveFactor_BI,
+    proportionIdle,
+    __MATHS__
+  );
+  market._p2pSupplyRate = computeP2PSupplyRate(
+    market._poolBorrowRate,
+    market._poolSupplyRate,
+    market._lastPoolSupplyIndex,
+    market._p2pSupplyIndexInternal,
+    market._p2pIndexCursor_BI,
+    market._p2pSupplyDelta,
+    market._p2pSupplyAmount,
+    market._reserveFactor_BI,
+    proportionIdle,
+    __MATHS__
+  );
 
   const p2pSupplyRate = createInterestRate(
     market.id,
     InterestRateSide.LENDER,
     InterestRateType.P2P,
-    p2pSupplyRateWithDelta.times(BIGDECIMAL_HUNDRED)
+    market._p2pSupplyRate.toBigDecimal().div(offset).times(BIGDECIMAL_HUNDRED)
   );
   const p2pBorrowRate = createInterestRate(
     market.id,
     InterestRateSide.BORROWER,
     InterestRateType.P2P,
-    p2pBorrowRateWithDelta.times(BIGDECIMAL_HUNDRED)
+    market._p2pBorrowRate.toBigDecimal().div(offset).times(BIGDECIMAL_HUNDRED)
   );
 
   if (!market.rates) return;
