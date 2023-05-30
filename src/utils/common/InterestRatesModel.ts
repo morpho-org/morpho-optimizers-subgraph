@@ -83,13 +83,15 @@ export function computeP2PIndex(
         __MATHS__.indexMul(p2pDelta, lastPoolIndex),
         __MATHS__.indexMul(p2pAmount, lastP2PIndex)
       ),
-      __MATHS__.INDEX_ONE.minus(proportionIdle) // To avoid shareOfTheDelta + proportionIdle > 1 with rounding errors.
+      __MATHS__.INDEX_ONE().minus(proportionIdle) // To avoid shareOfTheDelta + proportionIdle > 1 with rounding errors.
     );
-
     newP2PIndex = __MATHS__.indexMul(
       lastP2PIndex,
       __MATHS__
-        .indexMul(__MATHS__.INDEX_ONE.minus(shareOfTheDelta).minus(proportionIdle), p2pGrowthFactor)
+        .indexMul(
+          __MATHS__.INDEX_ONE().minus(shareOfTheDelta).minus(proportionIdle),
+          p2pGrowthFactor
+        )
         .plus(__MATHS__.indexMul(shareOfTheDelta, poolGrowthFactor))
         .plus(proportionIdle)
     );
@@ -124,7 +126,7 @@ export function computeP2PSupplyRate(
         __MATHS__.indexMul(p2pDelta, poolIndex),
         __MATHS__.indexMul(p2pAmount, p2pIndex)
       ),
-      __MATHS__.INDEX_ONE.minus(proportionIdle) // To avoid shareOfTheDelta > 1 with rounding errors.
+      __MATHS__.INDEX_ONE().minus(proportionIdle) // To avoid shareOfTheDelta > 1 with rounding errors.
     );
 
     p2pSupplyRate = __MATHS__
@@ -163,7 +165,7 @@ export function computeP2PBorrowRate(
         __MATHS__.indexMul(p2pDelta, poolIndex),
         __MATHS__.indexMul(p2pAmount, p2pIndex)
       ),
-      __MATHS__.INDEX_ONE.minus(proportionIdle) // To avoid shareOfTheDelta > 1 with rounding errors.
+      __MATHS__.INDEX_ONE().minus(proportionIdle) // To avoid shareOfTheDelta > 1 with rounding errors.
     );
 
     p2pBorrowRate = __MATHS__
