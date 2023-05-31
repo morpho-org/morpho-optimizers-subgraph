@@ -1070,16 +1070,16 @@ type Market @entity {
   " The borrow rate in P2P, updated at the last pool update "
   _p2pBorrowRate: BigInt!
 
-  " The p2p supply index, updated at the last pool update. Used in monitoring "
-  _p2pSupplyIndexInternal: BigInt!
+  " The p2p supply index, updated at the last pool update, by recomputing the P2P rates. Used in monitoring "
+  _p2pSupplyIndexFromRates: BigInt!
 
-  " The p2p borrow index, updated at the last pool update. Used in monitoring "
-  _p2pBorrowIndexInternal: BigInt!
+  " The p2p borrow index, updated at the last pool update, by recomputing the P2P rates. Used in monitoring "
+  _p2pBorrowIndexFromRates: BigInt!
 
   " The cursor where the p2p rate is calculated from, without conversion "
   _p2pIndexCursor_BI: BigInt!
 
-  " The amount of revenue that is converted to reserves at the current time. "
+  " The percent of revenue from P2P market that is converted to reserves at the current time. "
   _reserveFactor_BI: BigInt!
 
   " Whether the p2p matching is disabled or not on this market"
