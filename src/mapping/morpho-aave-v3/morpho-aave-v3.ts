@@ -405,6 +405,7 @@ export function handleMarketCreated(event: MarketCreated): void {
   market.reserveFactor = BigDecimal.zero(); // Event is emitted right after the market creation
   market._reserveFactor_BI = BigInt.zero();
   market.p2pIndexCursor = BigDecimal.zero(); // Event is emitted right after the market creation
+  market._p2pIndexCursor_BI = BigInt.zero();
 
   market.totalSupplyOnPool = BigDecimal.zero();
   market.totalCollateralOnPool = BigDecimal.zero();
