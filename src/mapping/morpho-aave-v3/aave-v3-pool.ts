@@ -19,6 +19,11 @@ import {
   UserEModeSet,
   Withdraw,
 } from "../../../generated/morpho-v1/templates/AaveV3Pool/AaveV3Pool";
+import { MORPHO_AAVE_V2_ADDRESS, MORPHO_AAVE_V3_ADDRESS } from "../../constants";
+import { getOrInitLendingProtocol } from "../../utils/initializers";
+import { AaveMath } from "../../utils/maths/AaveMath";
+import { _handleReserveUpdate } from "../common";
+import { ReserveUpdateParams } from "../morpho-aave/lending-pool";
 
 export function handleBackUnbacked(event: BackUnbacked): void {}
 
@@ -46,14 +51,18 @@ export function handleReserveDataUpdated(event: ReserveDataUpdated): void {
     ]);
     return;
   }
-  market._poolSupplyRate = event.params.liquidityRate;
-  market._poolBorrowRate = event.params.variableBorrowRate;
+  const protocol = getOrInitLendingProtocol(MORPHO_AAVE_V3_ADDRESS);
 
-  market._reserveSupplyIndex = event.params.liquidityIndex;
-  market._reserveBorrowIndex = event.params.variableBorrowIndex;
-
-  market.save();
-  // TODO: update financials here.
+  const params = new ReserveUpdateParams(
+    event,
+    market.id,
+    protocol,
+    event.params.liquidityIndex,
+    event.params.variableBorrowIndex,
+    event.params.liquidityRate,
+    event.params.variableBorrowRate
+  );
+  _handleReserveUpdate(params, new AaveMath());
 }
 
 export function handleReserveUsedAsCollateralDisabled(
