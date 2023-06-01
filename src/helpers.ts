@@ -1024,7 +1024,7 @@ export function updateP2PRates(market: Market, __MATHS__: IMaths): void {
     market._p2pBorrowIndexFromRates,
     market._p2pIndexCursor_BI,
     market._p2pBorrowDelta,
-    market._p2pSupplyAmount,
+    market._p2pBorrowAmount,
     market._reserveFactor_BI,
     proportionIdle,
     __MATHS__
