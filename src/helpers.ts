@@ -986,7 +986,6 @@ function computeProportionIdle(market: Market): BigInt {
 }
 
 export function updateP2PRates(market: Market, __MATHS__: IMaths): void {
-  const offset = BigInt.fromI32(market._indexesOffset).toBigDecimal();
   const proportionIdle = computeProportionIdle(market);
   const growthFactors = computeGrowthFactors(
     market._reserveSupplyIndex,
@@ -1046,13 +1045,19 @@ export function updateP2PRates(market: Market, __MATHS__: IMaths): void {
     market.id,
     InterestRateSide.LENDER,
     InterestRateType.P2P,
-    market._p2pSupplyRate.toBigDecimal().div(offset).times(BIGDECIMAL_HUNDRED)
+    market._p2pSupplyRate
+      .toBigDecimal()
+      .div(pow10Decimal(market._indexesOffset))
+      .times(BIGDECIMAL_HUNDRED)
   );
   const p2pBorrowRate = createInterestRate(
     market.id,
     InterestRateSide.BORROWER,
     InterestRateType.P2P,
-    market._p2pBorrowRate.toBigDecimal().div(offset).times(BIGDECIMAL_HUNDRED)
+    market._p2pBorrowRate
+      .toBigDecimal()
+      .div(pow10Decimal(market._indexesOffset))
+      .times(BIGDECIMAL_HUNDRED)
   );
 
   if (!market.rates) return;
