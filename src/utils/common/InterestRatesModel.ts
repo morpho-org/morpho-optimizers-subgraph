@@ -1,7 +1,6 @@
 import { BigInt } from "@graphprotocol/graph-ts";
 
 import { minBN } from "../../bn";
-import { WAD_BI } from "../../constants";
 import PercentMath from "../maths/PercentMath";
 import { IMaths } from "../maths/maths.interface";
 
@@ -130,7 +129,7 @@ export function computeP2PSupplyRate(
     );
 
     p2pSupplyRate = __MATHS__
-      .indexMul(p2pSupplyRate, WAD_BI.minus(shareOfTheDelta).minus(proportionIdle))
+      .indexMul(p2pSupplyRate, __MATHS__.INDEX_ONE().minus(shareOfTheDelta).minus(proportionIdle))
       .plus(__MATHS__.indexMul(poolSupplyRate, shareOfTheDelta))
       .plus(proportionIdle);
   }
@@ -169,7 +168,7 @@ export function computeP2PBorrowRate(
     );
 
     p2pBorrowRate = __MATHS__
-      .indexMul(p2pBorrowRate, WAD_BI.minus(shareOfTheDelta).minus(proportionIdle))
+      .indexMul(p2pBorrowRate, __MATHS__.INDEX_ONE().minus(shareOfTheDelta).minus(proportionIdle))
       .plus(__MATHS__.indexMul(poolBorrowRate, shareOfTheDelta))
       .plus(proportionIdle);
   }
