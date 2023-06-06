@@ -1,4 +1,3 @@
-
 name: morpho-subgraphs
 
 on:
@@ -69,6 +68,45 @@ jobs:
 
       - name: Deploy to the hosted service
         run: yarn graph auth --product hosted-service ${{ secrets.HOSTED_SERVICE_KEY }} && yarn deploy:${{ matrix.subgraph }}:hs
+
+  sh_deployment:
+    name: Deploy to TheGraphNode Morpho Hosted
+    strategy:
+      matrix:
+        subgraph: [morpho, dao]
+        include:
+          - subgraph: morpho
+          - sh-service: morpho-association/morpho-subgraphs
+          - subgraph: dao
+          - sh-service: morpho-association/morpho-dao
+    environment:
+      name: Self Hosted
+      url: https://graph.morpho.xyz/subgraphs/name/${{ matrix.sh-service }}
+    needs: builds
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
+
+      - name: Generate types
+        run: yarn codegen:${{ matrix.subgraph }}
+
+      - name: Deploy to Self Hosted
+        run: yarn deploy:${{ matrix.subgraph }}:sh
+        env:
+          USER: ${{ secrets.INFRA_USER }}
+          PASSWORD: ${{ secrets.INFRA_PASSWORD }}
+          BASIC_AUTH: ${{ secrets.INFRA_BASIC_AUTH }}
+          LABEL: ${{ github.sha }}
 
   release:
     name: Create new release

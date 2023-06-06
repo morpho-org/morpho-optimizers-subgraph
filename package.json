@@ -32,10 +32,13 @@
     "deploy:dao:hs": "SUBGRAPH=dao SLUG=morpho-association/morpho-dao yarn _deploy:hs",
     "deploy:morpho:studio": "SUBGRAPH=morpho-v1 SLUG=morpho-association/morpho-subgraphs yarn _deploy:studio",
     "deploy:dao:studio": "SUBGRAPH=dao SLUG=morpho-association/morpho-dao yarn _deploy:studio",
+    "deploy:morpho:sh": "SUBGRAPH=morpho-v1 SLUG=morpho-association/morpho-subgraphs yarn _deploy:sh",
+    "deploy:dao:sh": "SUBGRAPH=dao SLUG=morpho-association/morpho-dao yarn _deploy:sh",
     "_codegen": "graph codegen config/$SUBGRAPH/subgraph.yaml -o generated/$SUBGRAPH/",
     "_build": "graph build config/$SUBGRAPH/subgraph.yaml -o build/$SUBGRAPH/",
     "_deploy:hs": "graph deploy -o build/$SUBGRAPH --product hosted-service $SLUG config/$SUBGRAPH/subgraph.yaml",
     "_deploy:studio": "graph deploy -o build/$SUBGRAPH --node https://api.studio.thegraph.com/deploy/ $SLUG config/$SUBGRAPH/subgraph.yaml",
+    "_deploy:sh": "graph deploy -o build/$SUBGRAPH -l $LABEL --node https://$USER:$PASSWORD@graph.morpho.xyz --ipfs https://ipfs.morpho.xyz --headers '{ \"Authorization\": \"Basic $BASIC_AUTH\"}' $SLUG config/$SUBGRAPH/subgraph.yaml",
     "postinstall": "husky install",
     "lint": "eslint ./src --fix"
   },
@@ -62,7 +65,7 @@
     "prettier": "^2.8.6"
   },
   "config": {
-  "commitizen": {
+    "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
     }
   },
