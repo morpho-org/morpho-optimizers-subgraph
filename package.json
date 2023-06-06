@@ -38,7 +38,7 @@
     "_build": "graph build config/$SUBGRAPH/subgraph.yaml -o build/$SUBGRAPH/",
     "_deploy:hs": "graph deploy -o build/$SUBGRAPH --product hosted-service $SLUG config/$SUBGRAPH/subgraph.yaml",
     "_deploy:studio": "graph deploy -o build/$SUBGRAPH --node https://api.studio.thegraph.com/deploy/ $SLUG config/$SUBGRAPH/subgraph.yaml",
-    "_deploy:sh": "graph deploy -o build/$SUBGRAPH -l $LABEL --node https://$USER:$PASSWORD@graph.morpho.xyz --ipfs https://ipfs.morpho.xyz --headers '{ \"Authorization\": \"Basic $BASIC_AUTH\"}' $SLUG config/$SUBGRAPH/subgraph.yaml",
+    "_deploy:sh": "graph deploy -o build/$SUBGRAPH -l $LABEL --node https://$USER:$PASSWORD@graph.morpho.xyz --ipfs https://ipfs.morpho.xyz --headers \"{ \\\"Authorization\\\": \\\"Basic $BASIC_AUTH\\\" }\" $SLUG config/$SUBGRAPH/subgraph.yaml",
     "postinstall": "husky install",
     "lint": "eslint ./src --fix"
   },
