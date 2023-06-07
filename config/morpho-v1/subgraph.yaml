@@ -495,6 +495,7 @@ templates:
         - CompBorrowSpeedUpdated
         - CompSupplySpeedUpdated
         - NewCloseFactor
+        - NewLiquidationIncentive
         - NewCollateralFactor
         - NewPriceOracle
       abis:
@@ -509,10 +510,10 @@ templates:
         - name: CompoundOracle
           file: ../../abis/compound/CompoundOracle.json
       eventHandlers:
-#        - event: CompBorrowSpeedUpdated(indexed address,uint256)
-#          handler: handleCompBorrowSpeedUpdated
-#        - event: CompSupplySpeedUpdated(indexed address,uint256)
-#          handler: handleCompSupplySpeedUpdated
+        #        - event: CompBorrowSpeedUpdated(indexed address,uint256)
+        #          handler: handleCompBorrowSpeedUpdated
+        #        - event: CompSupplySpeedUpdated(indexed address,uint256)
+        #          handler: handleCompSupplySpeedUpdated
         - event: NewBorrowCap(indexed address,uint256)
           handler: handleNewBorrowCap
         - event: NewCloseFactor(uint256,uint256)
@@ -521,6 +522,8 @@ templates:
           handler: handleNewCollateralFactor
         - event: NewPriceOracle(address,address)
           handler: handleNewPriceOracle
+        - event: NewLiquidationIncentive(uint256,uint256)
+          handler: handleNewLiquidationIncentive
       file: ../../src/mapping/morpho-compound/comptroller.ts
   - kind: ethereum
     name: CompoundOracle
