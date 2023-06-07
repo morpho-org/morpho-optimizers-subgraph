@@ -51,7 +51,7 @@ export function handleMarketCreated(event: MarketCreated): void {
     .liquidationIncentiveMantissa()
     .toBigDecimal()
     .div(pow10Decimal(DEFAULT_DECIMALS))
-    .minus(BIGDECIMAL_ONE);
+    .minus(BigDecimal.fromString("1.028")); // 2.8% goes to the reserve
 
   market.canIsolate = false;
   market.createdTimestamp = event.block.timestamp;

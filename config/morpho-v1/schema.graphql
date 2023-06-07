@@ -554,6 +554,8 @@ type LendingProtocol implements Protocol @entity {
 
   owner: Bytes!
   oracle: Bytes
+
+  closeFactor: BigDecimal!
 }
 
 # helper entity to iterate through all markets

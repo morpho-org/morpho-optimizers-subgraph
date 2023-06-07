@@ -6,16 +6,19 @@ import { LendingPoolAddressesProvider } from "../../generated/morpho-v1/MorphoAa
 import { MorphoAaveV2 } from "../../generated/morpho-v1/MorphoAaveV2/MorphoAaveV2";
 import { AaveV3AddressesProvider } from "../../generated/morpho-v1/MorphoAaveV3/AaveV3AddressesProvider";
 import { MorphoAaveV3 } from "../../generated/morpho-v1/MorphoAaveV3/MorphoAaveV3";
+import { Comptroller } from "../../generated/morpho-v1/MorphoCompound/Comptroller";
 import { MorphoCompound } from "../../generated/morpho-v1/MorphoCompound/MorphoCompound";
 import { Token, LendingProtocol, Market, _MarketList } from "../../generated/morpho-v1/schema";
 import {
   AaveV3Pool as AaveV3PoolTemplate,
   AaveV3PoolConfigurator,
-  Comptroller,
+  Comptroller as ComptrollerTemplate,
   LendingPool as LendingPoolTemplate,
 } from "../../generated/morpho-v1/templates";
 import { LendingPoolConfigurator as LendingPoolConfiguratorTemplate } from "../../generated/morpho-v1/templates";
+import { pow10Decimal } from "../bn";
 import {
+  DEFAULT_DECIMALS,
   MORPHO_AAVE_V2_ADDRESS,
   MORPHO_AAVE_V3_ADDRESS,
   MORPHO_COMPOUND_ADDRESS,
@@ -60,9 +63,11 @@ export const getOrInitLendingProtocol = (protocolAddress: Address): LendingProto
       protocol.maxSortedUsers = morpho.maxSortedUsers();
 
       protocol.owner = morpho.owner();
+      protocol.closeFactor = BigDecimal.fromString("0.5");
     } else if (protocolAddress.equals(MORPHO_COMPOUND_ADDRESS)) {
       const morpho = MorphoCompound.bind(protocolAddress);
-      Comptroller.create(morpho.comptroller());
+      const comptroller = Comptroller.bind(morpho.comptroller());
+      ComptrollerTemplate.create(comptroller._address);
 
       protocol.name = "Morpho Compound";
       protocol.slug = "morpho-compound";
@@ -78,6 +83,10 @@ export const getOrInitLendingProtocol = (protocolAddress: Address): LendingProto
       protocol.maxSortedUsers = morpho.maxSortedUsers();
 
       protocol.owner = morpho.owner();
+      protocol.closeFactor = comptroller
+        .closeFactorMantissa()
+        .toBigDecimal()
+        .div(pow10Decimal(DEFAULT_DECIMALS));
     } else if (protocolAddress.equals(MORPHO_AAVE_V3_ADDRESS)) {
       const morpho = MorphoAaveV3.bind(protocolAddress);
 
@@ -96,6 +105,7 @@ export const getOrInitLendingProtocol = (protocolAddress: Address): LendingProto
       protocol.defaultMaxIterationsWithdraw = defaultIterations.withdraw;
 
       protocol.owner = morpho.owner();
+      protocol.closeFactor = BigDecimal.fromString("0.5");
     } else {
       log.critical("Unknown protocol address: {}", [protocolAddress.toHexString()]);
       return new LendingProtocol(Bytes.fromHexString("0x0"));
