@@ -10,7 +10,13 @@ import {
 import { Market } from "../../../generated/morpho-v1/schema";
 import { CToken as CTokenTemplate } from "../../../generated/morpho-v1/templates";
 import { pow10Decimal } from "../../bn";
-import { BASE_UNITS, BIGDECIMAL_ONE, C_ETH, DEFAULT_DECIMALS, WRAPPED_ETH } from "../../constants";
+import {
+  BASE_UNITS,
+  C_ETH,
+  DEFAULT_DECIMALS,
+  PROTOCOL_SEIZE_SHARE_MANTISSA,
+  WRAPPED_ETH,
+} from "../../constants";
 import {
   getOrInitLendingProtocol,
   getOrInitMarketList,
@@ -51,7 +57,7 @@ export function handleMarketCreated(event: MarketCreated): void {
     .liquidationIncentiveMantissa()
     .toBigDecimal()
     .div(pow10Decimal(DEFAULT_DECIMALS))
-    .minus(BigDecimal.fromString("1.028")); // 2.8% goes to the reserve
+    .minus(PROTOCOL_SEIZE_SHARE_MANTISSA); // 2.8% goes to the reserve
 
   market.canIsolate = false;
   market.createdTimestamp = event.block.timestamp;

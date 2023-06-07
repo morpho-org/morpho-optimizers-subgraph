@@ -18,6 +18,7 @@ import {
 import { LendingPoolConfigurator as LendingPoolConfiguratorTemplate } from "../../generated/morpho-v1/templates";
 import { pow10Decimal } from "../bn";
 import {
+  AAVE_CLOSE_FACTOR,
   DEFAULT_DECIMALS,
   MORPHO_AAVE_V2_ADDRESS,
   MORPHO_AAVE_V3_ADDRESS,
@@ -63,7 +64,7 @@ export const getOrInitLendingProtocol = (protocolAddress: Address): LendingProto
       protocol.maxSortedUsers = morpho.maxSortedUsers();
 
       protocol.owner = morpho.owner();
-      protocol.closeFactor = BigDecimal.fromString("0.5");
+      protocol.closeFactor = AAVE_CLOSE_FACTOR;
     } else if (protocolAddress.equals(MORPHO_COMPOUND_ADDRESS)) {
       const morpho = MorphoCompound.bind(protocolAddress);
       const comptroller = Comptroller.bind(morpho.comptroller());
@@ -105,7 +106,7 @@ export const getOrInitLendingProtocol = (protocolAddress: Address): LendingProto
       protocol.defaultMaxIterationsWithdraw = defaultIterations.withdraw;
 
       protocol.owner = morpho.owner();
-      protocol.closeFactor = BigDecimal.fromString("0.5");
+      protocol.closeFactor = AAVE_CLOSE_FACTOR;
     } else {
       log.critical("Unknown protocol address: {}", [protocolAddress.toHexString()]);
       return new LendingProtocol(Bytes.fromHexString("0x0"));

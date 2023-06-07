@@ -125,6 +125,14 @@ export const ETH_USD_PRICE_FEED_ADDRESS = Address.fromBytes(
 );
 
 /////////////////////////////
+/////  Default values   /////
+/////////////////////////////
+
+export const PROTOCOL_SEIZE_SHARE_MANTISSA = BigDecimal.fromString("1.028"); // 2.8% of the seized collateral is kept by the protocol
+
+export const AAVE_CLOSE_FACTOR = BigDecimal.fromString("0.5"); // 50% of the position is liquidated
+
+/////////////////////////////
 ///// Utility Functions /////
 /////////////////////////////
 
