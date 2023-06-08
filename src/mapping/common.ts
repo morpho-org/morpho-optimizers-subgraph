@@ -10,8 +10,8 @@ import {
   Position,
   Repay,
   Withdraw,
-  IndexesUpdatedMapping,
-  InvariantIndexesUpdated,
+  P2PIndexesUpdatedIndexInvariant,
+  IndexesAndRatesByBlock,
 } from "../../generated/morpho-v1/schema";
 import { pow10, pow10Decimal } from "../bn";
 import {
@@ -623,14 +623,14 @@ export function _handleP2PIndexesUpdated(
   const market = getMarket(marketAddress);
 
   if (market._lastReserveUpdate.equals(event.block.timestamp)) {
-    const lastInvariant = InvariantIndexesUpdated.load(market._lastInvariantIndexesUpdated)!;
+    const lastInvariant = IndexesAndRatesByBlock.load(market._lastIndexesAndRatesByBlock)!;
     const id: string = `${market.id.toHex()}-${event.block.number.toString()}`;
-    const mapping = new IndexesUpdatedMapping(id);
+    const mapping = new P2PIndexesUpdatedIndexInvariant(id);
     mapping.market = market.id;
-    mapping.computedP2PBorrowIndex = lastInvariant.newP2PBorrowIndex;
-    mapping.computedP2PSupplyIndex = lastInvariant.newP2PSupplyIndex;
-    mapping.marketP2PBorrowIndex = p2pBorrowIndex;
-    mapping.marketP2PSupplyIndex = p2pSupplyIndex;
+    mapping.subgraphP2PBorrowIndex = lastInvariant.newP2PBorrowIndex;
+    mapping.subgraphP2PSupplyIndex = lastInvariant.newP2PSupplyIndex;
+    mapping.morphoP2PBorrowIndex = p2pBorrowIndex;
+    mapping.morphoP2PSupplyIndex = p2pSupplyIndex;
     mapping.save();
   }
 
