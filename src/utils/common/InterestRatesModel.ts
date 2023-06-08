@@ -1,6 +1,7 @@
 import { BigInt } from "@graphprotocol/graph-ts";
 
-import { minBN } from "../../bn";
+import { minBN, pow10 } from "../../bn";
+import { BIGINT_ONE, BIGINT_TWO, SECONDS_PER_YEAR } from "../../constants";
 import PercentMath from "../maths/PercentMath";
 import { IMaths } from "../maths/maths.interface";
 
@@ -13,6 +14,22 @@ function computeP2PRate(
 ): BigInt {
   if (poolBorrowRate.lt(poolSupplyRate)) return poolBorrowRate;
   return PercentMath.weightedAvg(poolSupplyRate, poolBorrowRate, p2pIndexCursor);
+}
+
+export function computeProportionIdle(
+  indexesOffset: number,
+  idleSupply: BigInt | null,
+  p2pSupplyAmount: BigInt,
+  p2pSupplyIndex: BigInt
+): BigInt {
+  const offset = pow10(indexesOffset);
+  if (idleSupply && idleSupply!.gt(BigInt.zero())) {
+    const totalP2PSupplied = p2pSupplyAmount.times(p2pSupplyIndex).div(offset);
+    const proportionIdle = idleSupply!.times(offset).div(totalP2PSupplied);
+    if (proportionIdle.gt(offset)) return offset;
+    return proportionIdle;
+  }
+  return BigInt.zero();
 }
 
 export function computeGrowthFactors(
@@ -173,4 +190,41 @@ export function computeP2PBorrowRate(
       .plus(proportionIdle);
   }
   return p2pBorrowRate;
+}
+
+export function computeIndexLinearInterests(
+  index: BigInt,
+  rate: BigInt,
+  exp: BigInt,
+  __MATHS__: IMaths
+): BigInt {
+  const r = rate.div(BigInt.fromI32(SECONDS_PER_YEAR));
+  const factor = __MATHS__.INDEX_ONE().plus(r.times(exp));
+  return __MATHS__.indexMul(index, factor);
+}
+
+export function computeIndexCompoundedInterests(
+  index: BigInt,
+  rate: BigInt,
+  exp: BigInt,
+  __MATHS__: IMaths
+): BigInt {
+  const s = BigInt.fromI32(SECONDS_PER_YEAR);
+  if (exp.equals(BigInt.zero())) return __MATHS__.INDEX_ONE();
+  const expMinusOne = exp.minus(BIGINT_ONE);
+  const expMinusTwo = exp.gt(BIGINT_TWO) ? exp.minus(BIGINT_TWO) : BigInt.zero();
+  const basePowerTwo = __MATHS__.indexMul(rate, rate).div(s.times(s));
+  const basePowerThree = __MATHS__.indexMul(basePowerTwo, rate).div(s);
+  const secondTerm = exp.times(expMinusOne).times(basePowerTwo).div(BIGINT_TWO);
+  const thirdTerm = exp
+    .times(expMinusOne)
+    .times(expMinusTwo)
+    .times(basePowerThree)
+    .div(BigInt.fromI32(6));
+  const factor = __MATHS__
+    .INDEX_ONE()
+    .plus(rate.times(exp).div(s))
+    .plus(secondTerm)
+    .plus(thirdTerm);
+  return __MATHS__.indexMul(index, factor);
 }

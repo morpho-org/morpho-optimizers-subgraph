@@ -29,6 +29,7 @@
     "build:morpho": "SUBGRAPH=morpho-v1 yarn _build",
     "build:dao": "SUBGRAPH=dao yarn _build",
     "deploy:morpho:hs": "SUBGRAPH=morpho-v1 SLUG=morpho-association/morpho-subgraphs yarn _deploy:hs",
+    "deploy:morpho:hs:staging": "SUBGRAPH=morpho-v1 SLUG=morpho-dev/morpho-subgraphs-staging yarn _deploy:hs",
     "deploy:dao:hs": "SUBGRAPH=dao SLUG=morpho-association/morpho-dao yarn _deploy:hs",
     "deploy:morpho:studio": "SUBGRAPH=morpho-v1 SLUG=morpho-association/morpho-subgraphs yarn _deploy:studio",
     "deploy:dao:studio": "SUBGRAPH=dao SLUG=morpho-association/morpho-dao yarn _deploy:studio",

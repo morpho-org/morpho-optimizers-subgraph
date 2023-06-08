@@ -10,6 +10,8 @@ import {
   Position,
   Repay,
   Withdraw,
+  IndexesUpdatedMapping,
+  InvariantIndexesUpdated,
 } from "../../generated/morpho-v1/schema";
 import { pow10, pow10Decimal } from "../bn";
 import {
@@ -615,9 +617,22 @@ export function _handleP2PIndexesUpdated(
   poolSupplyIndex: BigInt,
   p2pSupplyIndex: BigInt,
   poolBorrowIndex: BigInt,
-  p2pBorrowIndex: BigInt
+  p2pBorrowIndex: BigInt,
+  __MATHS__: IMaths
 ): void {
   const market = getMarket(marketAddress);
+
+  if (market._lastReserveUpdate.equals(event.block.timestamp)) {
+    const lastInvariant = InvariantIndexesUpdated.load(market._lastInvariantIndexesUpdated)!;
+    const id: string = `${market.id.toHex()}-${event.block.number.toString()}`;
+    const mapping = new IndexesUpdatedMapping(id);
+    mapping.market = market.id;
+    mapping.computedP2PBorrowIndex = lastInvariant.newP2PBorrowIndex;
+    mapping.computedP2PSupplyIndex = lastInvariant.newP2PSupplyIndex;
+    mapping.marketP2PBorrowIndex = p2pBorrowIndex;
+    mapping.marketP2PSupplyIndex = p2pSupplyIndex;
+    mapping.save();
+  }
 
   const protocol = getOrInitLendingProtocol(event.address);
   const inputToken = getOrInitToken(market.inputToken);
@@ -930,7 +945,7 @@ export function _handleReserveUpdate(params: ReserveUpdateParams, __MATHS__: IMa
     poolBorrowRate.id,
   ];
 
-  updateP2PRates(market, __MATHS__);
+  updateP2PRates(params.event, market, __MATHS__);
 
   updateProtocolPosition(params.protocol, market);
 

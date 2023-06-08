@@ -25,6 +25,7 @@ export const DEFAULT_DECIMALS = 18;
 export const RAY_OFFSET = 27;
 export const SECONDS_PER_HOUR = 60 * 60;
 export const SECONDS_PER_DAY = 60 * 60 * 24;
+export const SECONDS_PER_YEAR = 365 * SECONDS_PER_DAY;
 
 export const BLOCKS_PER_YEAR = BigInt.fromI32(2632320 as i32); // 7200 blocks per day
 

@@ -12,6 +12,7 @@ import { PriceOracle } from "../../../generated/morpho-v1/MorphoAaveV2/PriceOrac
 import { ProtocolDataProvider } from "../../../generated/morpho-v1/MorphoAaveV2/ProtocolDataProvider";
 import { Market, UnderlyingTokenMapping } from "../../../generated/morpho-v1/schema";
 import { BASE_UNITS, WAD } from "../../constants";
+import { createEmptyIndexesAndRatesByBlock } from "../../helpers";
 import {
   getOrInitLendingProtocol,
   getOrInitMarketList,
@@ -122,6 +123,7 @@ export function handleMarketCreated(event: MarketCreated): void {
   market._lastPoolSupplyIndex = morphoPoolIndexes.getPoolSupplyIndex();
   market._lastPoolBorrowIndex = morphoPoolIndexes.getPoolBorrowIndex();
   market._lastPoolUpdate = morphoPoolIndexes.getLastUpdateTimestamp();
+  market._lastIndexesAndRatesByBlock = createEmptyIndexesAndRatesByBlock(event, market).id;
 
   market._scaledSupplyOnPool = BigInt.zero();
   market._scaledSupplyInP2P = BigInt.zero();

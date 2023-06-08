@@ -1201,6 +1201,9 @@ type Market @entity {
 
   " The idle supply on the Morpho contract"
   _idleSupply: BigInt
+
+  " Last Invariant Indexes Updated "
+  _lastIndexesAndRatesByBlock: IndexesAndRatesByBlock!
 }
 
 #################################
@@ -2240,4 +2243,46 @@ type UnderlyingTokenMapping @entity {
   debtToken: Bytes!
   aTokenV3: Bytes
   variableDebtTokenV3: Bytes
+}
+
+# Used as a monitoring value, to trace, block by block, after each ReserveData,
+#  IndexCursor or ReserveFactor update.
+type IndexesAndRatesByBlock @entity {
+  " ${marketAddress} - ${blockNumber} "
+  id: ID!
+
+  " The address of the updated market indexes "
+  market: Market!
+
+  " Block number of the event "
+  blockNumber: BigInt!
+
+  " Timestamp at the event "
+  timestamp: BigInt!
+
+  " Difference in time between the last IndexesUpdated event and itself "
+  timestampDiff: BigInt!
+
+  newP2PSupplyIndex: BigInt!
+  newP2PBorrowIndex: BigInt!
+  newPoolSupplyIndex: BigInt!
+  newPoolBorrowIndex: BigInt!
+  newP2PSupplyRate: BigInt!
+  newP2PBorrowRate: BigInt!
+  newPoolSupplyRate: BigInt!
+  newPoolBorrowRate: BigInt!
+  lastP2PSupplyIndex: BigInt!
+  lastP2PBorrowIndex: BigInt!
+  lastPoolSupplyIndex: BigInt!
+  lastPoolBorrowIndex: BigInt!
+}
+
+type P2PIndexesUpdatedIndexInvariant @entity {
+  " ${marketAddress} - ${blockNumber} "
+  id: ID!
+  market: Market!
+  morphoP2PSupplyIndex: BigInt!
+  morphoP2PBorrowIndex: BigInt!
+  subgraphP2PSupplyIndex: BigInt!
+  subgraphP2PBorrowIndex: BigInt!
 }

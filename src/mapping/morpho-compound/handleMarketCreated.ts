@@ -17,6 +17,7 @@ import {
   PROTOCOL_SEIZE_SHARE_MANTISSA,
   WRAPPED_ETH,
 } from "../../constants";
+import { createEmptyIndexesAndRatesByBlock } from "../../helpers";
 import {
   getOrInitLendingProtocol,
   getOrInitMarketList,
@@ -117,6 +118,7 @@ export function handleMarketCreated(event: MarketCreated): void {
   market._p2pBorrowIndexFromRates = morpho.p2pBorrowIndex(event.params._poolToken);
   market._p2pSupplyRate = BigInt.zero();
   market._p2pBorrowRate = BigInt.zero();
+  market._lastIndexesAndRatesByBlock = createEmptyIndexesAndRatesByBlock(event, market).id;
 
   market._lastPoolSupplyIndex = morphoPoolIndexes.getLastSupplyPoolIndex();
   market._lastPoolBorrowIndex = morphoPoolIndexes.getLastBorrowPoolIndex();

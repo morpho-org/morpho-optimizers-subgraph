@@ -14,6 +14,8 @@ import {
   PositionSnapshot,
   _ActiveAccount,
   _PositionCounter,
+  IndexesAndRatesByBlock,
+  _MarketList,
 } from "../generated/morpho-v1/schema";
 
 import { pow10, pow10Decimal } from "./bn";
@@ -34,6 +36,9 @@ import {
   computeP2PBorrowRate,
   computeP2PIndex,
   computeP2PSupplyRate,
+  computeIndexLinearInterests,
+  computeIndexCompoundedInterests,
+  computeProportionIdle,
 } from "./utils/common/InterestRatesModel";
 import { getMarket, getOrInitToken } from "./utils/initializers";
 import { IMaths } from "./utils/maths/maths.interface";
@@ -71,6 +76,122 @@ export function createInterestRate(
   interestRate.save();
 
   return interestRate;
+}
+
+export function createEmptyIndexesAndRatesByBlock(
+  event: ethereum.Event,
+  market: Market
+): IndexesAndRatesByBlock {
+  const id = `${market.id.toHex()}-${event.block.number.toString()}`;
+  const invariantIndexes = new IndexesAndRatesByBlock(id);
+  invariantIndexes.market = market.id;
+  invariantIndexes.blockNumber = event.block.number;
+  invariantIndexes.timestamp = event.block.timestamp;
+  invariantIndexes.timestampDiff = BigInt.zero();
+
+  invariantIndexes.newP2PSupplyIndex = market._p2pSupplyIndex;
+  invariantIndexes.newP2PBorrowIndex = market._p2pBorrowIndex;
+  invariantIndexes.newPoolSupplyIndex = market._reserveSupplyIndex;
+  invariantIndexes.newPoolBorrowIndex = market._reserveBorrowIndex;
+
+  invariantIndexes.lastP2PBorrowIndex = BigInt.zero();
+  invariantIndexes.lastP2PSupplyIndex = BigInt.zero();
+  invariantIndexes.lastPoolSupplyIndex = BigInt.zero();
+  invariantIndexes.lastPoolBorrowIndex = BigInt.zero();
+
+  invariantIndexes.newP2PBorrowRate = market._p2pBorrowRate;
+  invariantIndexes.newP2PSupplyRate = market._p2pSupplyRate;
+  invariantIndexes.newPoolSupplyRate = market._poolSupplyRate;
+  invariantIndexes.newPoolBorrowRate = market._poolBorrowRate;
+
+  invariantIndexes.save();
+  return invariantIndexes;
+}
+
+export function createIndexesUpdated(
+  blockNumber: BigInt,
+  timestamp: BigInt,
+  market: Market,
+  __MATHS__: IMaths
+): IndexesAndRatesByBlock {
+  const id: string = `${market.id.toHex()}-${blockNumber.toString()}`;
+  const alreadyUpdated = IndexesAndRatesByBlock.load(id);
+  if (alreadyUpdated) return alreadyUpdated;
+  const indexesUpdated = new IndexesAndRatesByBlock(id);
+  const lastInvariant = IndexesAndRatesByBlock.load(market._lastIndexesAndRatesByBlock);
+  if (!lastInvariant) throw new Error("No last invariant");
+
+  const lastP2PSupplyIndex = lastInvariant.newP2PSupplyIndex;
+  const lastP2PBorrowIndex = lastInvariant.newP2PBorrowIndex;
+  const lastPoolSupplyIndex = lastInvariant.newPoolSupplyIndex;
+  const lastPoolBorrowIndex = lastInvariant.newPoolBorrowIndex;
+
+  const exp = timestamp.minus(lastInvariant.timestamp);
+  const proportionIdle = computeProportionIdle(
+    market._indexesOffset,
+    market._idleSupply,
+    market._p2pSupplyAmount,
+    lastP2PSupplyIndex
+  );
+
+  const newP2PSupplyRate = computeP2PSupplyRate(
+    market._poolBorrowRate,
+    market._poolSupplyRate,
+    lastPoolSupplyIndex,
+    lastP2PSupplyIndex,
+    market._p2pIndexCursor_BI,
+    market._p2pSupplyDelta,
+    market._p2pSupplyAmount,
+    market._reserveFactor_BI,
+    proportionIdle,
+    __MATHS__
+  );
+
+  const newP2PBorrowRate = computeP2PBorrowRate(
+    market._poolBorrowRate,
+    market._poolSupplyRate,
+    lastPoolBorrowIndex,
+    lastP2PBorrowIndex,
+    market._p2pIndexCursor_BI,
+    market._p2pBorrowDelta,
+    market._p2pBorrowAmount,
+    market._reserveFactor_BI,
+    proportionIdle,
+    __MATHS__
+  );
+
+  indexesUpdated.market = market.id;
+  indexesUpdated.blockNumber = blockNumber;
+  indexesUpdated.timestamp = timestamp;
+  indexesUpdated.timestampDiff = exp;
+
+  indexesUpdated.lastP2PSupplyIndex = lastP2PSupplyIndex;
+  indexesUpdated.lastP2PBorrowIndex = lastP2PBorrowIndex;
+  indexesUpdated.lastPoolSupplyIndex = lastPoolSupplyIndex;
+  indexesUpdated.lastPoolBorrowIndex = lastPoolBorrowIndex;
+
+  indexesUpdated.newP2PSupplyRate = newP2PSupplyRate;
+  indexesUpdated.newP2PBorrowRate = newP2PBorrowRate;
+  indexesUpdated.newPoolSupplyRate = market._poolSupplyRate;
+  indexesUpdated.newPoolBorrowRate = market._poolBorrowRate;
+
+  indexesUpdated.newP2PSupplyIndex = computeIndexLinearInterests(
+    lastP2PSupplyIndex,
+    newP2PSupplyRate,
+    exp,
+    __MATHS__
+  );
+  indexesUpdated.newP2PBorrowIndex = computeIndexCompoundedInterests(
+    lastP2PBorrowIndex,
+    newP2PBorrowRate,
+    exp,
+    __MATHS__
+  );
+  indexesUpdated.newPoolSupplyIndex = market._reserveSupplyIndex;
+  indexesUpdated.newPoolBorrowIndex = market._reserveBorrowIndex;
+
+  indexesUpdated.save();
+  return indexesUpdated;
 }
 
 export function updateMarketSnapshots(
@@ -974,18 +1095,15 @@ export function updateProtocolPosition(protocol: LendingProtocol, market: Market
   market.save();
 }
 
-function computeProportionIdle(market: Market): BigInt {
-  const offset = pow10(market._indexesOffset);
-  if (market._idleSupply && market._idleSupply!.gt(BigInt.zero())) {
-    const totalP2PSupplied = market._p2pSupplyAmount.times(market._p2pSupplyIndex).div(offset);
-    const proportionIdle = market._idleSupply!.times(offset).div(totalP2PSupplied);
-    if (proportionIdle.gt(offset)) return offset;
-    return proportionIdle;
-  }
-  return BigInt.zero();
-}
+export function updateP2PRates(event: ethereum.Event, market: Market, __MATHS__: IMaths): void {
+  const indexesUpdated = createIndexesUpdated(
+    event.block.number,
+    event.block.timestamp,
+    market,
+    __MATHS__
+  );
+  market._lastInvariantIndexesUpdated = indexesUpdated.id;
 
-export function updateP2PRates(market: Market, __MATHS__: IMaths): void {
   const proportionIdle = computeProportionIdle(market);
   const growthFactors = computeGrowthFactors(
     market._reserveSupplyIndex,
@@ -1061,7 +1179,8 @@ export function updateP2PRates(market: Market, __MATHS__: IMaths): void {
   );
 
   if (!market.rates) return;
-  const rates = market.rates as string[];
+  if (market.rates.length == 0) return;
+  const rates: string[] = market.rates;
   const supplyRateId = rates[0];
   const borrowRateId = rates[3];
   if (!supplyRateId || !borrowRateId) return;
