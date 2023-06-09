@@ -17,7 +17,6 @@ import {
   PROTOCOL_SEIZE_SHARE_MANTISSA,
   WRAPPED_ETH,
 } from "../../constants";
-import { createEmptyIndexesAndRatesByBlock } from "../../helpers";
 import {
   createEmptyIndexesAndRatesHistory,
   getOrInitLendingProtocol,
