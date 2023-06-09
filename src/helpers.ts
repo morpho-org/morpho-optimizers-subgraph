@@ -159,17 +159,17 @@ export function createIndexesUpdated(
   indexesUpdated.newPoolSupplyRate = market._poolSupplyRate;
   indexesUpdated.newPoolBorrowRate = market._poolBorrowRate;
 
-  indexesUpdated.newP2PSupplyIndex = computeIndexLinearInterests(
+  indexesUpdated.newP2PSupplyIndex = __MATHS__.computeNewSupplyIndex(
     lastP2PSupplyIndex,
     newP2PSupplyRate,
     timestampDiff,
-    __MATHS__
+    blockDiff
   );
-  indexesUpdated.newP2PBorrowIndex = computeIndexCompoundedInterests(
+  indexesUpdated.newP2PBorrowIndex = __MATHS__.computeNewBorrowIndex(
     lastP2PBorrowIndex,
     newP2PBorrowRate,
     timestampDiff,
-    __MATHS__
+    blockDiff
   );
   indexesUpdated.newPoolSupplyIndex = market._reserveSupplyIndex;
   indexesUpdated.newPoolBorrowIndex = market._reserveBorrowIndex;
@@ -1178,7 +1178,8 @@ export function updateP2PIndexesAndRates(
     market.id,
     InterestRateSide.LENDER,
     InterestRateType.P2P,
-    market._p2pSupplyRate
+    __MATHS__
+      .toAPR(market._p2pSupplyRate)
       .toBigDecimal()
       .div(pow10Decimal(market._indexesOffset))
       .times(BIGDECIMAL_HUNDRED)
@@ -1187,7 +1188,8 @@ export function updateP2PIndexesAndRates(
     market.id,
     InterestRateSide.BORROWER,
     InterestRateType.P2P,
-    market._p2pBorrowRate
+    __MATHS__
+      .toAPR(market._p2pBorrowRate)
       .toBigDecimal()
       .div(pow10Decimal(market._indexesOffset))
       .times(BIGDECIMAL_HUNDRED)

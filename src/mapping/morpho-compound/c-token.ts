@@ -5,7 +5,7 @@ import {
   AccrueInterest1,
   CToken,
 } from "../../../generated/morpho-v1/templates/CToken/CToken";
-import { BLOCKS_PER_YEAR, MORPHO_COMPOUND_ADDRESS } from "../../constants";
+import { MORPHO_COMPOUND_ADDRESS } from "../../constants";
 import { getOrInitLendingProtocol } from "../../utils/initializers";
 import { CompoundMath } from "../../utils/maths/CompoundMath";
 import { _handleReserveUpdate } from "../common";
@@ -28,8 +28,8 @@ function handleAccrueInterest(event: ethereum.Event): void {
   const supplyPoolIndex = cTokenInstance.exchangeRateStored();
   const borrowPoolIndex = cTokenInstance.borrowIndex();
 
-  const supplyPoolRate = supplyPoolRatePerBlock.times(BLOCKS_PER_YEAR);
-  const borrowPoolRate = borrowPoolRatePerBlock.times(BLOCKS_PER_YEAR);
+  const supplyPoolRate = supplyPoolRatePerBlock;
+  const borrowPoolRate = borrowPoolRatePerBlock;
   _handleReserveUpdate(
     new ReserveUpdateParams(
       event,

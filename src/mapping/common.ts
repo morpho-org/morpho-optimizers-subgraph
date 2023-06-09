@@ -922,9 +922,14 @@ export function _handleReserveUpdate(params: ReserveUpdateParams, __MATHS__: IMa
   market._lastReserveUpdate = params.event.block.timestamp;
 
   // update rates as APR as it is done for aave subgraphs
-  const supplyRate = params.poolSupplyRate.toBigDecimal().div(pow10Decimal(market._indexesOffset));
-
-  const borrowRate = params.poolBorrowRate.toBigDecimal().div(pow10Decimal(market._indexesOffset));
+  const supplyRate = __MATHS__
+    .toAPR(params.poolSupplyRate)
+    .toBigDecimal()
+    .div(pow10Decimal(market._indexesOffset));
+  const borrowRate = __MATHS__
+    .toAPR(params.poolBorrowRate)
+    .toBigDecimal()
+    .div(pow10Decimal(market._indexesOffset));
   const poolSupplyRate = createInterestRate(
     market.id,
     InterestRateSide.LENDER,
