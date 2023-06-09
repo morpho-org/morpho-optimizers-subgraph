@@ -14,7 +14,7 @@ import {
   PositionSnapshot,
   _ActiveAccount,
   _PositionCounter,
-  IndexesAndRatesByBlock,
+  _IndexesAndRatesHistory,
   _MarketList,
 } from "../generated/morpho-v1/schema";
 
@@ -79,55 +79,27 @@ export function createInterestRate(
   return interestRate;
 }
 
-export function createEmptyIndexesAndRatesByBlock(
-  event: ethereum.Event,
-  market: Market
-): IndexesAndRatesByBlock {
-  const id = `${market.id.toHex()}-${event.block.number.toString()}`;
-  const invariantIndexes = new IndexesAndRatesByBlock(id);
-  invariantIndexes.market = market.id;
-  invariantIndexes.blockNumber = event.block.number;
-  invariantIndexes.timestamp = event.block.timestamp;
-  invariantIndexes.timestampDiff = BigInt.zero();
-
-  invariantIndexes.newP2PSupplyIndex = market._p2pSupplyIndex;
-  invariantIndexes.newP2PBorrowIndex = market._p2pBorrowIndex;
-  invariantIndexes.newPoolSupplyIndex = market._reserveSupplyIndex;
-  invariantIndexes.newPoolBorrowIndex = market._reserveBorrowIndex;
-
-  invariantIndexes.lastP2PBorrowIndex = BigInt.zero();
-  invariantIndexes.lastP2PSupplyIndex = BigInt.zero();
-  invariantIndexes.lastPoolSupplyIndex = BigInt.zero();
-  invariantIndexes.lastPoolBorrowIndex = BigInt.zero();
-
-  invariantIndexes.newP2PBorrowRate = market._p2pBorrowRate;
-  invariantIndexes.newP2PSupplyRate = market._p2pSupplyRate;
-  invariantIndexes.newPoolSupplyRate = market._poolSupplyRate;
-  invariantIndexes.newPoolBorrowRate = market._poolBorrowRate;
-
-  invariantIndexes.save();
-  return invariantIndexes;
-}
-
 export function createIndexesUpdated(
   blockNumber: BigInt,
   timestamp: BigInt,
   market: Market,
   __MATHS__: IMaths
-): IndexesAndRatesByBlock {
+): _IndexesAndRatesHistory[] {
   const id: string = `${market.id.toHex()}-${blockNumber.toString()}`;
-  const alreadyUpdated = IndexesAndRatesByBlock.load(id);
-  if (alreadyUpdated) return alreadyUpdated;
-  const indexesUpdated = new IndexesAndRatesByBlock(id);
-  const lastInvariant = IndexesAndRatesByBlock.load(market._lastIndexesAndRatesByBlock);
-  if (!lastInvariant) throw new Error("No last invariant");
+  let indexesUpdated = _IndexesAndRatesHistory.load(id);
+  const lastInvariant = _IndexesAndRatesHistory.load(
+    indexesUpdated ? market._previousIndexesAndRatesHistory! : market._lastIndexesAndRatesHistory
+  );
+  if (!indexesUpdated) indexesUpdated = new _IndexesAndRatesHistory(id);
+  if (!lastInvariant) log.critical("No last invariant", []);
 
-  const lastP2PSupplyIndex = lastInvariant.newP2PSupplyIndex;
-  const lastP2PBorrowIndex = lastInvariant.newP2PBorrowIndex;
+  const lastP2PSupplyIndex = lastInvariant!.newP2PSupplyIndex;
+  const lastP2PBorrowIndex = lastInvariant!.newP2PBorrowIndex;
   const lastPoolSupplyIndex = market._reserveSupplyIndex;
   const lastPoolBorrowIndex = market._reserveBorrowIndex;
 
-  const exp = timestamp.minus(lastInvariant.timestamp);
+  const timestampDiff = timestamp.minus(lastInvariant!.timestamp);
+  const blockDiff = blockNumber.minus(lastInvariant!.blockNumber);
   const proportionIdle = computeProportionIdle(
     market._indexesOffset,
     market._idleSupply,
@@ -173,8 +145,9 @@ export function createIndexesUpdated(
 
   indexesUpdated.market = market.id;
   indexesUpdated.blockNumber = blockNumber;
+  indexesUpdated.blockDiff = blockDiff;
   indexesUpdated.timestamp = timestamp;
-  indexesUpdated.timestampDiff = exp;
+  indexesUpdated.timestampDiff = timestampDiff;
 
   indexesUpdated.lastP2PSupplyIndex = lastP2PSupplyIndex;
   indexesUpdated.lastP2PBorrowIndex = lastP2PBorrowIndex;
@@ -189,20 +162,20 @@ export function createIndexesUpdated(
   indexesUpdated.newP2PSupplyIndex = computeIndexLinearInterests(
     lastP2PSupplyIndex,
     newP2PSupplyRate,
-    exp,
+    timestampDiff,
     __MATHS__
   );
   indexesUpdated.newP2PBorrowIndex = computeIndexCompoundedInterests(
     lastP2PBorrowIndex,
     newP2PBorrowRate,
-    exp,
+    timestampDiff,
     __MATHS__
   );
   indexesUpdated.newPoolSupplyIndex = market._reserveSupplyIndex;
   indexesUpdated.newPoolBorrowIndex = market._reserveBorrowIndex;
 
   indexesUpdated.save();
-  return indexesUpdated;
+  return [lastInvariant!, indexesUpdated];
 }
 
 export function updateMarketSnapshots(
@@ -1106,14 +1079,20 @@ export function updateProtocolPosition(protocol: LendingProtocol, market: Market
   market.save();
 }
 
-export function updateP2PRates(event: ethereum.Event, market: Market, __MATHS__: IMaths): void {
+export function updateP2PIndexesAndRates(
+  event: ethereum.Event,
+  market: Market,
+  __MATHS__: IMaths
+): void {
   const indexesUpdated = createIndexesUpdated(
     event.block.number,
     event.block.timestamp,
     market,
     __MATHS__
   );
-  market._lastIndexesAndRatesByBlock = indexesUpdated.id;
+
+  market._previousIndexesAndRatesHistory = indexesUpdated[0].id;
+  market._lastIndexesAndRatesHistory = indexesUpdated[1].id;
 
   const proportionIdle = computeProportionIdle(
     market._indexesOffset,
@@ -1216,7 +1195,7 @@ export function updateP2PRates(event: ethereum.Event, market: Market, __MATHS__:
 
   const rates: string[] | null = market.rates;
   if (!rates) return;
-  if (rates.length === 0) return;
+  if (rates.length < 0) log.critical("Rate error", []);
   const supplyRateId = rates[0];
   const borrowRateId = rates[3];
   if (!supplyRateId || !borrowRateId) return;

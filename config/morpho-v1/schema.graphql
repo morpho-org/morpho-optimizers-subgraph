@@ -1203,7 +1203,10 @@ type Market @entity {
   _idleSupply: BigInt
 
   " Last Invariant Indexes Updated "
-  _lastIndexesAndRatesByBlock: IndexesAndRatesByBlock!
+  _lastIndexesAndRatesHistory: _IndexesAndRatesHistory!
+
+  " Previous Invariant Indexes Updated, needed to recompute rates at every update "
+  _previousIndexesAndRatesHistory: _IndexesAndRatesHistory
 }
 
 #################################
@@ -2247,8 +2250,8 @@ type UnderlyingTokenMapping @entity {
 
 # Used as a monitoring value, to trace, block by block, after each ReserveData,
 #  IndexCursor or ReserveFactor update.
-type IndexesAndRatesByBlock @entity {
-  " ${marketAddress} - ${blockNumber} "
+type _IndexesAndRatesHistory @entity {
+  " ${marketAddress}-${blockNumber} "
   id: ID!
 
   " The address of the updated market indexes "
@@ -2256,6 +2259,9 @@ type IndexesAndRatesByBlock @entity {
 
   " Block number of the event "
   blockNumber: BigInt!
+
+  " Difference in block between the last IndexesUpdated event and itself "
+  blockDiff: BigInt!
 
   " Timestamp at the event "
   timestamp: BigInt!
@@ -2277,7 +2283,7 @@ type IndexesAndRatesByBlock @entity {
   lastPoolBorrowIndex: BigInt!
 }
 
-type P2PIndexesUpdatedIndexInvariant @entity {
+type _P2PIndexesUpdatedIndexInvariant @entity {
   " ${marketAddress} - ${blockNumber} "
   id: ID!
   market: Market!

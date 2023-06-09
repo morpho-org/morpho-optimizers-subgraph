@@ -32,7 +32,7 @@ import {
   P2PIndexesUpdated,
 } from "../../../generated/morpho-v1/MorphoCompound/MorphoCompound";
 import { BASE_UNITS } from "../../constants";
-import { updateP2PRates } from "../../helpers";
+import { updateP2PIndexesAndRates } from "../../helpers";
 import { getMarket, getOrInitLendingProtocol } from "../../utils/initializers";
 import { CompoundMath } from "../../utils/maths/CompoundMath";
 import {
@@ -102,14 +102,14 @@ export function handleP2PAmountsUpdated(event: P2PAmountsUpdated): void {
 export function handleP2PBorrowDeltaUpdated(event: P2PBorrowDeltaUpdated): void {
   const market = getMarket(event.params._poolToken);
   market._p2pBorrowDelta = event.params._p2pBorrowDelta;
-  updateP2PRates(event, market, new CompoundMath());
+  updateP2PIndexesAndRates(event, market, new CompoundMath());
   market.save();
 }
 
 export function handleP2PSupplyDeltaUpdated(event: P2PSupplyDeltaUpdated): void {
   const market = getMarket(event.params._poolToken);
   market._p2pSupplyDelta = event.params._p2pSupplyDelta;
-  updateP2PRates(event, market, new CompoundMath());
+  updateP2PIndexesAndRates(event, market, new CompoundMath());
   market.save();
 }
 
@@ -225,7 +225,7 @@ export function handleP2PIndexCursorSet(event: P2PIndexCursorSet): void {
   const p2pIndexCursor = BigInt.fromI32(event.params._newValue);
   market.p2pIndexCursor = p2pIndexCursor.toBigDecimal().div(BASE_UNITS);
   market._p2pIndexCursor_BI = p2pIndexCursor;
-  updateP2PRates(event, market, new CompoundMath());
+  updateP2PIndexesAndRates(event, market, new CompoundMath());
   market.save();
 }
 
@@ -258,7 +258,7 @@ export function handleReserveFactorSet(event: ReserveFactorSet): void {
   const reserveFactor = BigInt.fromI32(event.params._newValue);
   market.reserveFactor = reserveFactor.toBigDecimal().div(BASE_UNITS);
   market._reserveFactor_BI = reserveFactor;
-  updateP2PRates(event, market, new CompoundMath());
+  updateP2PIndexesAndRates(event, market, new CompoundMath());
   market.save();
 }
 

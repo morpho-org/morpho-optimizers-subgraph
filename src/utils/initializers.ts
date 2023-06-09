@@ -1,4 +1,4 @@
-import { Address, BigDecimal, Bytes, log } from "@graphprotocol/graph-ts";
+import { Address, BigDecimal, BigInt, Bytes, ethereum, log } from "@graphprotocol/graph-ts";
 
 import { ERC20 } from "../../generated/morpho-v1/MorphoAaveV2/ERC20";
 import { LendingPool } from "../../generated/morpho-v1/MorphoAaveV2/LendingPool";
@@ -8,7 +8,13 @@ import { AaveV3AddressesProvider } from "../../generated/morpho-v1/MorphoAaveV3/
 import { MorphoAaveV3 } from "../../generated/morpho-v1/MorphoAaveV3/MorphoAaveV3";
 import { Comptroller } from "../../generated/morpho-v1/MorphoCompound/Comptroller";
 import { MorphoCompound } from "../../generated/morpho-v1/MorphoCompound/MorphoCompound";
-import { Token, LendingProtocol, Market, _MarketList } from "../../generated/morpho-v1/schema";
+import {
+  Token,
+  LendingProtocol,
+  Market,
+  _MarketList,
+  _IndexesAndRatesHistory,
+} from "../../generated/morpho-v1/schema";
 import {
   AaveV3Pool as AaveV3PoolTemplate,
   AaveV3PoolConfigurator,
@@ -24,6 +30,39 @@ import {
   MORPHO_AAVE_V3_ADDRESS,
   MORPHO_COMPOUND_ADDRESS,
 } from "../constants";
+
+export function createEmptyIndexesAndRatesHistory(
+  event: ethereum.Event,
+  market: Market
+): _IndexesAndRatesHistory {
+  const id = `${market.id.toHex()}-${event.block.number.toString()}`;
+  const history = _IndexesAndRatesHistory.load(id);
+  if (history) log.critical("_IndexesAndRatesHistory {} should not exist", [id]);
+  const invariantIndexes = new _IndexesAndRatesHistory(id);
+  invariantIndexes.market = market.id;
+  invariantIndexes.blockNumber = event.block.number;
+  invariantIndexes.blockDiff = BigInt.zero();
+  invariantIndexes.timestamp = event.block.timestamp;
+  invariantIndexes.timestampDiff = BigInt.zero();
+
+  invariantIndexes.newP2PSupplyIndex = market._p2pSupplyIndex;
+  invariantIndexes.newP2PBorrowIndex = market._p2pBorrowIndex;
+  invariantIndexes.newPoolSupplyIndex = market._reserveSupplyIndex;
+  invariantIndexes.newPoolBorrowIndex = market._reserveBorrowIndex;
+
+  invariantIndexes.lastP2PBorrowIndex = BigInt.zero();
+  invariantIndexes.lastP2PSupplyIndex = BigInt.zero();
+  invariantIndexes.lastPoolSupplyIndex = BigInt.zero();
+  invariantIndexes.lastPoolBorrowIndex = BigInt.zero();
+
+  invariantIndexes.newP2PBorrowRate = market._p2pBorrowRate;
+  invariantIndexes.newP2PSupplyRate = market._p2pSupplyRate;
+  invariantIndexes.newPoolSupplyRate = market._poolSupplyRate;
+  invariantIndexes.newPoolBorrowRate = market._poolBorrowRate;
+
+  invariantIndexes.save();
+  return invariantIndexes;
+}
 
 export const getOrInitToken = (tokenAddress: Bytes): Token => {
   let token = Token.load(tokenAddress);

@@ -51,8 +51,9 @@ import {
 } from "../../../generated/morpho-v1/MorphoAaveV3/MorphoAaveV3";
 import { Market, UnderlyingTokenMapping } from "../../../generated/morpho-v1/schema";
 import { AAVE_V3_ORACLE_OFFSET, BASE_UNITS, RAY_BI } from "../../constants";
-import { createEmptyIndexesAndRatesByBlock, updateP2PRates } from "../../helpers";
+import { updateP2PIndexesAndRates } from "../../helpers";
 import {
+  createEmptyIndexesAndRatesHistory,
   getMarket,
   getOrInitLendingProtocol,
   getOrInitMarketList,
@@ -189,14 +190,14 @@ export function handleBorrowPositionUpdated(event: BorrowPositionUpdated): void 
 export function handleP2PSupplyDeltaUpdated(event: P2PSupplyDeltaUpdated): void {
   const market = getMarket(event.params.underlying);
   market._p2pSupplyDelta = event.params.scaledDelta;
-  updateP2PRates(event, market, new AaveMath());
+  updateP2PIndexesAndRates(event, market, new AaveMath());
   market.save();
 }
 
 export function handleP2PBorrowDeltaUpdated(event: P2PBorrowDeltaUpdated): void {
   const market = getMarket(event.params.underlying);
   market._p2pBorrowDelta = event.params.scaledDelta;
-  updateP2PRates(event, market, new AaveMath());
+  updateP2PIndexesAndRates(event, market, new AaveMath());
   market.save();
 }
 
@@ -391,7 +392,8 @@ export function handleMarketCreated(event: MarketCreated): void {
   market._p2pBorrowIndexFromRates = RAY_BI;
   market._p2pSupplyRate = BigInt.zero();
   market._p2pBorrowRate = BigInt.zero();
-  market._lastIndexesAndRatesByBlock = createEmptyIndexesAndRatesByBlock(event, market).id;
+  market._previousIndexesAndRatesHistory = null;
+  market._lastIndexesAndRatesHistory = createEmptyIndexesAndRatesHistory(event, market).id;
 
   market._lastPoolSupplyIndex = poolReserveData.liquidityIndex;
   market._lastPoolBorrowIndex = poolReserveData.variableBorrowIndex;
@@ -482,7 +484,7 @@ export function handleReserveFactorSet(event: ReserveFactorSet): void {
   const reserveFactor = BigInt.fromI32(event.params.reserveFactor);
   market.reserveFactor = reserveFactor.toBigDecimal().div(BASE_UNITS);
   market._reserveFactor_BI = reserveFactor;
-  updateP2PRates(event, market, new AaveMath());
+  updateP2PIndexesAndRates(event, market, new AaveMath());
   market.save();
 }
 
@@ -491,7 +493,7 @@ export function handleP2PIndexCursorSet(event: P2PIndexCursorSet): void {
   const p2pIndexCursor = BigInt.fromI32(event.params.p2pIndexCursor);
   market.p2pIndexCursor = p2pIndexCursor.toBigDecimal().div(BASE_UNITS);
   market._p2pIndexCursor_BI = p2pIndexCursor;
-  updateP2PRates(event, market, new AaveMath());
+  updateP2PIndexesAndRates(event, market, new AaveMath());
   market.save();
 }
 
@@ -510,7 +512,7 @@ export function handleIndexesUpdated(event: IndexesUpdated): void {
 export function handleIdleSupplyUpdated(event: IdleSupplyUpdated): void {
   const market = getMarket(event.params.underlying);
   market._idleSupply = event.params.idleSupply;
-  updateP2PRates(event, market, new AaveMath());
+  updateP2PIndexesAndRates(event, market, new AaveMath());
   market.save();
 }
 

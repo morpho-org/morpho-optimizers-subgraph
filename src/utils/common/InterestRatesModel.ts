@@ -41,9 +41,9 @@ export function computeProportionDelta(
   __MATHS__: IMaths
 ): BigInt {
   if (p2pAmount.isZero() || (p2pDelta.isZero() && proportionIdle.isZero())) return BigInt.zero();
-  const scaledP2PDelta = __MATHS__.indexMul(p2pDelta, poolIndex);
-  const scaledP2PAmount = __MATHS__.indexMul(p2pAmount, p2pIndex);
-  const proportionDelta = __MATHS__.indexDiv(scaledP2PDelta, scaledP2PAmount);
+  const underlyingP2PDelta = __MATHS__.indexMul(p2pDelta, poolIndex);
+  const underlyingP2PAmount = __MATHS__.indexMul(p2pAmount, p2pIndex);
+  const proportionDelta = __MATHS__.indexDiv(underlyingP2PDelta, underlyingP2PAmount);
   const diffWithProportionIdle = __MATHS__.INDEX_ONE().minus(proportionIdle);
   // To avoid shareOfTheDelta + proportionIdle > 1 with rounding errors.
   return minBN(proportionDelta, diffWithProportionIdle);
