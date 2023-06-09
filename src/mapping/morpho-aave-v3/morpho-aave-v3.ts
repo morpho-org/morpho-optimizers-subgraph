@@ -59,6 +59,7 @@ import {
 } from "../../utils/initializers";
 import {
   _handleBorrowed,
+  _handleBorrowerPositionUpdated,
   _handleLiquidated,
   _handleP2PIndexesUpdated,
   _handleRepaid,
@@ -174,7 +175,7 @@ export function handleSupplyPositionUpdated(event: SupplyPositionUpdated): void 
 }
 
 export function handleBorrowPositionUpdated(event: BorrowPositionUpdated): void {
-  _handleSupplierPositionUpdated(
+  _handleBorrowerPositionUpdated(
     event,
     event.params.underlying,
     event.params.user,
