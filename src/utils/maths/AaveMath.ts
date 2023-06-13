@@ -1,5 +1,6 @@
 import { BigInt } from "@graphprotocol/graph-ts";
 
+import { SECONDS_PER_YEAR } from "../../constants";
 import {
   computeIndexCompoundedInterests,
   computeIndexLinearInterests,
@@ -31,7 +32,8 @@ export class AaveMath implements IMaths {
     timestampDiff: BigInt,
     _blockDiff: BigInt
   ): BigInt {
-    return computeIndexLinearInterests(index, rate, timestampDiff, this);
+    const ratePerSecond = rate.div(BigInt.fromI32(SECONDS_PER_YEAR));
+    return computeIndexLinearInterests(index, ratePerSecond, timestampDiff, this);
   }
 
   computeNewBorrowIndex(

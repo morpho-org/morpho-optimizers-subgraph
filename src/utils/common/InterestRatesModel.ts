@@ -177,8 +177,7 @@ export function computeIndexLinearInterests(
   exp: BigInt,
   __MATHS__: IMaths
 ): BigInt {
-  const r = rate.div(BigInt.fromI32(SECONDS_PER_YEAR));
-  const factor = __MATHS__.INDEX_ONE().plus(r.times(exp));
+  const factor = __MATHS__.INDEX_ONE().plus(rate.times(exp));
   return __MATHS__.indexMul(index, factor);
 }
 
