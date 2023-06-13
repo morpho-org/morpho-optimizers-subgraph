@@ -1207,6 +1207,9 @@ type Market @entity {
 
   " Previous Invariant Indexes Updated, needed to recompute rates at every update "
   _previousIndexesAndRatesHistory: _IndexesAndRatesHistory
+
+  " Last P2P Indexes Updated Invariant, used in interests calculation "
+  _lastP2PIndexesUpdatedInvariant: _P2PIndexesUpdatedIndexInvariant
 }
 
 #################################
@@ -2269,26 +2272,95 @@ type _IndexesAndRatesHistory @entity {
   " Difference in time between the last IndexesUpdated event and itself "
   timestampDiff: BigInt!
 
+  " New computed P2P Supply Index "
   newP2PSupplyIndex: BigInt!
+
+  " New computed P2P Borrow Index "
   newP2PBorrowIndex: BigInt!
+
+  " New received P2P Supply Index "
   newPoolSupplyIndex: BigInt!
+
+  " New received P2P Borrow Index "
   newPoolBorrowIndex: BigInt!
+
+  " New computed P2P Supply Rate "
   newP2PSupplyRate: BigInt!
+
+  " New computed P2P Borrow Rate "
   newP2PBorrowRate: BigInt!
+
+  " New received Pool Supply Rate "
   newPoolSupplyRate: BigInt!
+
+  " New received Pool Borrow Rate "
   newPoolBorrowRate: BigInt!
+
+  " Previous computed P2P Supply Index "
   lastP2PSupplyIndex: BigInt!
+
+  " Previous computed P2P Borrow Index "
   lastP2PBorrowIndex: BigInt!
+
+  " Previous received Pool Supply Index "
   lastPoolSupplyIndex: BigInt!
+
+  " Previous received Pool Borrow Index "
   lastPoolBorrowIndex: BigInt!
 }
 
 type _P2PIndexesUpdatedIndexInvariant @entity {
   " ${marketAddress} - ${blockNumber} "
   id: ID!
+
+  " The address of the updated market indexes "
   market: Market!
+
+  " P2P Supply Index emitted by the contract "
   morphoP2PSupplyIndex: BigInt!
+
+  " P2P Borrow Index emitted by the contract "
   morphoP2PBorrowIndex: BigInt!
+
+  " P2P Supply Index computed offchain by the subgraph "
   subgraphP2PSupplyIndex: BigInt!
+
+  " P2P Borrow Index computed offchain by the subgraph "
   subgraphP2PBorrowIndex: BigInt!
+
+  " Amount of interests accumulated in supply since the last update on Morpho onchain "
+  morphoP2PSupplyInterests: BigDecimal!
+
+  " Amount of interests accumulated in borrow since the last update on Morpho onchain "
+  morphoP2PBorrowInterests: BigDecimal!
+
+  " Amount of interests accumulated in supply since the last update on subgraph onchain "
+  subgraphP2PSupplyInterests: BigDecimal!
+
+  " Amount of interests accumulated in borrow since the last update on subgraph onchain "
+  subgraphP2PBorrowInterests: BigDecimal!
+
+  " Percentage of supply derivation between Morpho and theoretical model "
+  supplyP2PDerivation: BigDecimal!
+
+  " Percentage of borrow derivation between Morpho and theoretical model "
+  borrowP2PDerivation: BigDecimal!
+
+  " Amount of interests accumulated in supply since the last update on Morpho onchain "
+  _morphoP2PSupplyInterests_BI: BigInt!
+
+  " Amount of interests accumulated in borrow since the last update on Morpho onchain "
+  _morphoP2PBorrowInterests_BI: BigInt!
+
+  " Amount of interests accumulated in supply since the last update on subgraph onchain "
+  _subgraphP2PSupplyInterests_BI: BigInt!
+
+  " Amount of interests accumulated in borrow since the last update on subgraph onchain "
+  _subgraphP2PBorrowInterests_BI: BigInt!
+
+  " Percentage of supply derivation between Morpho and theoretical model "
+  _supplyP2PDerivation_BI: BigInt!
+
+  " Percentage of borrow derivation between Morpho and theoretical model "
+  _borrowP2PDerivation_BI: BigInt!
 }

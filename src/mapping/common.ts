@@ -12,6 +12,8 @@ import {
   Withdraw,
   _IndexesAndRatesHistory,
   _P2PIndexesUpdatedIndexInvariant,
+  Market,
+  Token,
 } from "../../generated/morpho-v1/schema";
 import { pow10, pow10Decimal } from "../bn";
 import {
@@ -611,6 +613,91 @@ export function _handleBorrowed(
   updateProtocolPosition(protocol, market);
 }
 
+function updateLastP2PIndexesUpdatedInvariant(
+  event: ethereum.Event,
+  market: Market,
+  inputToken: Token,
+  p2pBorrowIndex: BigInt,
+  p2pSupplyIndex: BigInt
+): void {
+  const lastP2PIndexesUpdated = market._lastP2PIndexesUpdatedInvariant
+    ? _P2PIndexesUpdatedIndexInvariant.load(market._lastP2PIndexesUpdatedInvariant!)
+    : null;
+  const lastInvariant = _IndexesAndRatesHistory.load(market._lastIndexesAndRatesHistory)!;
+  const id: string = `${market.id.toHex()}-${event.block.number.toString()}`;
+  const mapping = new _P2PIndexesUpdatedIndexInvariant(id);
+  mapping.market = market.id;
+  mapping.subgraphP2PBorrowIndex = lastInvariant.newP2PBorrowIndex;
+  mapping.subgraphP2PSupplyIndex = lastInvariant.newP2PSupplyIndex;
+  mapping.morphoP2PBorrowIndex = p2pBorrowIndex;
+  mapping.morphoP2PSupplyIndex = p2pSupplyIndex;
+
+  // Init everything 0 for first event to avoid runtime errors.
+  mapping._morphoP2PSupplyInterests_BI = BigInt.zero();
+  mapping._morphoP2PBorrowInterests_BI = BigInt.zero();
+  mapping._subgraphP2PSupplyInterests_BI = BigInt.zero();
+  mapping._subgraphP2PBorrowInterests_BI = BigInt.zero();
+  mapping.morphoP2PSupplyInterests = BigDecimal.zero();
+  mapping.morphoP2PBorrowInterests = BigDecimal.zero();
+  mapping.subgraphP2PSupplyInterests = BigDecimal.zero();
+  mapping.subgraphP2PBorrowInterests = BigDecimal.zero();
+  mapping.supplyP2PDerivation = BigDecimal.zero();
+  mapping.borrowP2PDerivation = BigDecimal.zero();
+  mapping._supplyP2PDerivation_BI = BigInt.zero();
+  mapping._borrowP2PDerivation_BI = BigInt.zero();
+
+  // This update the different values.
+  if (!!lastP2PIndexesUpdated) {
+    mapping._morphoP2PSupplyInterests_BI = mapping.morphoP2PSupplyIndex
+      .minus(lastP2PIndexesUpdated.morphoP2PSupplyIndex)
+      .times(market._scaledSupplyInP2P)
+      .div(pow10(market._indexesOffset));
+    mapping._morphoP2PBorrowInterests_BI = mapping.morphoP2PBorrowIndex
+      .minus(lastP2PIndexesUpdated.morphoP2PBorrowIndex)
+      .times(market._scaledBorrowInP2P)
+      .div(pow10(market._indexesOffset));
+    mapping._subgraphP2PSupplyInterests_BI = mapping.subgraphP2PSupplyIndex
+      .minus(lastP2PIndexesUpdated.subgraphP2PSupplyIndex)
+      .times(market._scaledSupplyInP2P)
+      .div(pow10(market._indexesOffset));
+    mapping._subgraphP2PBorrowInterests_BI = mapping.subgraphP2PBorrowIndex
+      .minus(lastP2PIndexesUpdated.subgraphP2PBorrowIndex)
+      .times(market._scaledBorrowInP2P)
+      .div(pow10(market._indexesOffset));
+    mapping.morphoP2PSupplyInterests = mapping._morphoP2PSupplyInterests_BI
+      .toBigDecimal()
+      .div(pow10Decimal(inputToken.decimals));
+    mapping.morphoP2PBorrowInterests = mapping._morphoP2PBorrowInterests_BI
+      .toBigDecimal()
+      .div(pow10Decimal(inputToken.decimals));
+    mapping.subgraphP2PSupplyInterests = mapping._subgraphP2PSupplyInterests_BI
+      .toBigDecimal()
+      .div(pow10Decimal(inputToken.decimals));
+    mapping.subgraphP2PBorrowInterests = mapping._subgraphP2PBorrowInterests_BI
+      .toBigDecimal()
+      .div(pow10Decimal(inputToken.decimals));
+    mapping._supplyP2PDerivation_BI = mapping._subgraphP2PSupplyInterests_BI.isZero()
+      ? BigInt.zero()
+      : mapping._morphoP2PSupplyInterests_BI
+          .minus(mapping._subgraphP2PSupplyInterests_BI)
+          .div(mapping._subgraphP2PSupplyInterests_BI);
+    mapping._borrowP2PDerivation_BI = mapping._subgraphP2PBorrowInterests_BI.isZero()
+      ? BigInt.zero()
+      : mapping._morphoP2PBorrowInterests_BI
+          .minus(mapping._subgraphP2PBorrowInterests_BI)
+          .div(mapping._subgraphP2PBorrowInterests_BI);
+    mapping.supplyP2PDerivation = mapping._supplyP2PDerivation_BI
+      .toBigDecimal()
+      .times(BIGDECIMAL_HUNDRED);
+    mapping.borrowP2PDerivation = mapping._borrowP2PDerivation_BI
+      .toBigDecimal()
+      .times(BIGDECIMAL_HUNDRED);
+  }
+  mapping.save();
+
+  market._lastP2PIndexesUpdatedInvariant = mapping.id;
+}
+
 export function _handleP2PIndexesUpdated(
   event: ethereum.Event,
   marketAddress: Address,
@@ -621,21 +708,12 @@ export function _handleP2PIndexesUpdated(
   __MATHS__: IMaths
 ): void {
   const market = getMarket(marketAddress);
+  const inputToken = getOrInitToken(market.inputToken);
+  const protocol = getOrInitLendingProtocol(event.address);
 
   if (market._lastReserveUpdate.equals(event.block.timestamp)) {
-    const lastInvariant = _IndexesAndRatesHistory.load(market._lastIndexesAndRatesHistory)!;
-    const id: string = `${market.id.toHex()}-${event.block.number.toString()}`;
-    const mapping = new _P2PIndexesUpdatedIndexInvariant(id);
-    mapping.market = market.id;
-    mapping.subgraphP2PBorrowIndex = lastInvariant.newP2PBorrowIndex;
-    mapping.subgraphP2PSupplyIndex = lastInvariant.newP2PSupplyIndex;
-    mapping.morphoP2PBorrowIndex = p2pBorrowIndex;
-    mapping.morphoP2PSupplyIndex = p2pSupplyIndex;
-    mapping.save();
+    updateLastP2PIndexesUpdatedInvariant(event, market, inputToken, p2pBorrowIndex, p2pSupplyIndex);
   }
-
-  const protocol = getOrInitLendingProtocol(event.address);
-  const inputToken = getOrInitToken(market.inputToken);
 
   // The token price is updated in reserveUpdated event
   // calculate new revenue

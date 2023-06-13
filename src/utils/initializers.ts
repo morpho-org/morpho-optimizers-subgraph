@@ -31,18 +31,18 @@ import {
   MORPHO_COMPOUND_ADDRESS,
 } from "../constants";
 
-export function createEmptyIndexesAndRatesHistory(
-  event: ethereum.Event,
+export function createOrSetInitialEmptyIndexesAndRatesHistory(
+  blockNumber: BigInt,
+  timestamp: BigInt,
   market: Market
 ): _IndexesAndRatesHistory {
-  const id = `${market.id.toHex()}-${event.block.number.toString()}`;
-  const history = _IndexesAndRatesHistory.load(id);
-  if (history) log.critical("_IndexesAndRatesHistory {} should not exist", [id]);
-  const invariantIndexes = new _IndexesAndRatesHistory(id);
+  const id = `${market.id.toHex()}-${blockNumber.toString()}`;
+  let invariantIndexes = _IndexesAndRatesHistory.load(id);
+  if (!invariantIndexes) invariantIndexes = new _IndexesAndRatesHistory(id);
   invariantIndexes.market = market.id;
-  invariantIndexes.blockNumber = event.block.number;
+  invariantIndexes.blockNumber = blockNumber;
   invariantIndexes.blockDiff = BigInt.zero();
-  invariantIndexes.timestamp = event.block.timestamp;
+  invariantIndexes.timestamp = timestamp;
   invariantIndexes.timestampDiff = BigInt.zero();
 
   invariantIndexes.newP2PSupplyIndex = market._p2pSupplyIndex;
