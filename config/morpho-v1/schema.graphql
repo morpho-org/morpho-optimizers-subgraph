@@ -1209,7 +1209,7 @@ type Market @entity {
   _previousIndexesAndRatesHistory: _IndexesAndRatesHistory
 
   " Last P2P Indexes Updated Invariant, used in interests calculation "
-  _lastP2PIndexesUpdatedInvariant: _P2PIndexesUpdatedIndexInvariant
+  _lastP2PIndexesUpdatedInvariant: _P2PIndexesUpdatedInvariant
 }
 
 #################################
@@ -2312,7 +2312,7 @@ type _IndexesAndRatesHistory @entity {
 # Used as a monitoring value, to trace, event by event, after each P2PIndexesUpdated,
 #  if the theoretical value of the P2P rates and indexes computed onchain have not
 #  too much derivation from the P2P rates and indexes computed offchain.
-type _P2PIndexesUpdatedIndexInvariant @entity {
+type _P2PIndexesUpdatedInvariant @entity {
   " ${marketAddress} - ${blockNumber} "
   id: ID!
 

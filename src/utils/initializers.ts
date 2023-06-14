@@ -14,6 +14,7 @@ import {
   Market,
   _MarketList,
   _IndexesAndRatesHistory,
+  _P2PIndexesUpdatedInvariant,
 } from "../../generated/morpho-v1/schema";
 import {
   AaveV3Pool as AaveV3PoolTemplate,
@@ -62,6 +63,41 @@ export function createOrInitIndexesAndRatesHistory(
 
   invariantIndexes.save();
   return invariantIndexes;
+}
+
+export function initP2PIndexesUpdatedIndexInvariant(
+  event: ethereum.Event,
+  market: Market,
+  p2pSupplyIndex: BigInt,
+  p2pBorrowIndex: BigInt
+): _P2PIndexesUpdatedInvariant | null {
+  const lastInvariant = _IndexesAndRatesHistory.load(market._lastIndexesAndRatesHistory)!;
+  if (!lastInvariant) return null;
+
+  const id: string = `${market.id.toHex()}-${event.block.number.toString()}`;
+  const invariant = new _P2PIndexesUpdatedInvariant(id);
+  invariant.market = market.id;
+  invariant.blockNumber = event.block.number;
+  invariant.timestamp = event.block.timestamp;
+  invariant.subgraphP2PBorrowIndex = lastInvariant.newP2PBorrowIndex;
+  invariant.subgraphP2PSupplyIndex = lastInvariant.newP2PSupplyIndex;
+  invariant.morphoP2PSupplyIndex = p2pSupplyIndex;
+  invariant.morphoP2PBorrowIndex = p2pBorrowIndex;
+
+  // Init everything 0 for first event to avoid runtime errors.
+  invariant._morphoP2PSupplyInterests_BI = BigInt.zero();
+  invariant._morphoP2PBorrowInterests_BI = BigInt.zero();
+  invariant._subgraphP2PSupplyInterests_BI = BigInt.zero();
+  invariant._subgraphP2PBorrowInterests_BI = BigInt.zero();
+  invariant.morphoP2PSupplyInterests = BigDecimal.zero();
+  invariant.morphoP2PBorrowInterests = BigDecimal.zero();
+  invariant.subgraphP2PSupplyInterests = BigDecimal.zero();
+  invariant.subgraphP2PBorrowInterests = BigDecimal.zero();
+  invariant.supplyP2PDerivation = BigDecimal.zero();
+  invariant.borrowP2PDerivation = BigDecimal.zero();
+  invariant._supplyP2PDerivation_BI = BigInt.zero();
+  invariant._borrowP2PDerivation_BI = BigInt.zero();
+  return invariant;
 }
 
 export const getOrInitToken = (tokenAddress: Bytes): Token => {

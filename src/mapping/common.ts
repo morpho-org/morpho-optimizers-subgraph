@@ -11,7 +11,7 @@ import {
   Repay,
   Withdraw,
   _IndexesAndRatesHistory,
-  _P2PIndexesUpdatedIndexInvariant,
+  _P2PIndexesUpdatedInvariant,
   Market,
   Token,
 } from "../../generated/morpho-v1/schema";
@@ -37,7 +37,13 @@ import {
   updateProtocolPosition,
   updateSnapshots,
 } from "../helpers";
-import { getMarket, getOrInitLendingProtocol, getOrInitToken } from "../utils/initializers";
+import { _createP2PIndexesUpdatedInvariant } from "../utils/common/invariants";
+import {
+  getMarket,
+  getOrInitLendingProtocol,
+  getOrInitToken,
+  initP2PIndexesUpdatedIndexInvariant,
+} from "../utils/initializers";
 import { IMaths } from "../utils/maths/maths.interface";
 
 import { ReserveUpdateParams } from "./morpho-aave/lending-pool";
@@ -617,86 +623,18 @@ function updateLastP2PIndexesUpdatedInvariant(
   event: ethereum.Event,
   market: Market,
   inputToken: Token,
-  p2pBorrowIndex: BigInt,
-  p2pSupplyIndex: BigInt
+  p2pSupplyIndex: BigInt,
+  p2pBorrowIndex: BigInt
 ): void {
-  const lastP2PIndexesUpdated = market._lastP2PIndexesUpdatedInvariant
-    ? _P2PIndexesUpdatedIndexInvariant.load(market._lastP2PIndexesUpdatedInvariant!)
-    : null;
-  const lastInvariant = _IndexesAndRatesHistory.load(market._lastIndexesAndRatesHistory)!;
-  const id: string = `${market.id.toHex()}-${event.block.number.toString()}`;
-  const invariant = new _P2PIndexesUpdatedIndexInvariant(id);
-  invariant.market = market.id;
-  invariant.blockNumber = event.block.number;
-  invariant.timestamp = event.block.timestamp;
-  invariant.subgraphP2PBorrowIndex = lastInvariant.newP2PBorrowIndex;
-  invariant.subgraphP2PSupplyIndex = lastInvariant.newP2PSupplyIndex;
-  invariant.morphoP2PBorrowIndex = p2pBorrowIndex;
-  invariant.morphoP2PSupplyIndex = p2pSupplyIndex;
-
-  // Init everything 0 for first event to avoid runtime errors.
-  invariant._morphoP2PSupplyInterests_BI = BigInt.zero();
-  invariant._morphoP2PBorrowInterests_BI = BigInt.zero();
-  invariant._subgraphP2PSupplyInterests_BI = BigInt.zero();
-  invariant._subgraphP2PBorrowInterests_BI = BigInt.zero();
-  invariant.morphoP2PSupplyInterests = BigDecimal.zero();
-  invariant.morphoP2PBorrowInterests = BigDecimal.zero();
-  invariant.subgraphP2PSupplyInterests = BigDecimal.zero();
-  invariant.subgraphP2PBorrowInterests = BigDecimal.zero();
-  invariant.supplyP2PDerivation = BigDecimal.zero();
-  invariant.borrowP2PDerivation = BigDecimal.zero();
-  invariant._supplyP2PDerivation_BI = BigInt.zero();
-  invariant._borrowP2PDerivation_BI = BigInt.zero();
-
-  // This update the different values.
-  if (!!lastP2PIndexesUpdated) {
-    invariant._morphoP2PSupplyInterests_BI = invariant.morphoP2PSupplyIndex
-      .minus(lastP2PIndexesUpdated.morphoP2PSupplyIndex)
-      .times(market._scaledSupplyInP2P)
-      .div(pow10(market._indexesOffset));
-    invariant._morphoP2PBorrowInterests_BI = invariant.morphoP2PBorrowIndex
-      .minus(lastP2PIndexesUpdated.morphoP2PBorrowIndex)
-      .times(market._scaledBorrowInP2P)
-      .div(pow10(market._indexesOffset));
-    invariant._subgraphP2PSupplyInterests_BI = invariant.subgraphP2PSupplyIndex
-      .minus(lastP2PIndexesUpdated.subgraphP2PSupplyIndex)
-      .times(market._scaledSupplyInP2P)
-      .div(pow10(market._indexesOffset));
-    invariant._subgraphP2PBorrowInterests_BI = invariant.subgraphP2PBorrowIndex
-      .minus(lastP2PIndexesUpdated.subgraphP2PBorrowIndex)
-      .times(market._scaledBorrowInP2P)
-      .div(pow10(market._indexesOffset));
-    invariant.morphoP2PSupplyInterests = invariant._morphoP2PSupplyInterests_BI
-      .toBigDecimal()
-      .div(pow10Decimal(inputToken.decimals));
-    invariant.morphoP2PBorrowInterests = invariant._morphoP2PBorrowInterests_BI
-      .toBigDecimal()
-      .div(pow10Decimal(inputToken.decimals));
-    invariant.subgraphP2PSupplyInterests = invariant._subgraphP2PSupplyInterests_BI
-      .toBigDecimal()
-      .div(pow10Decimal(inputToken.decimals));
-    invariant.subgraphP2PBorrowInterests = invariant._subgraphP2PBorrowInterests_BI
-      .toBigDecimal()
-      .div(pow10Decimal(inputToken.decimals));
-    invariant._supplyP2PDerivation_BI = invariant._subgraphP2PSupplyInterests_BI.isZero()
-      ? BigInt.zero()
-      : invariant._morphoP2PSupplyInterests_BI
-          .minus(invariant._subgraphP2PSupplyInterests_BI)
-          .div(invariant._subgraphP2PSupplyInterests_BI);
-    invariant._borrowP2PDerivation_BI = invariant._subgraphP2PBorrowInterests_BI.isZero()
-      ? BigInt.zero()
-      : invariant._morphoP2PBorrowInterests_BI
-          .minus(invariant._subgraphP2PBorrowInterests_BI)
-          .div(invariant._subgraphP2PBorrowInterests_BI);
-    invariant.supplyP2PDerivation = invariant._supplyP2PDerivation_BI
-      .toBigDecimal()
-      .times(BIGDECIMAL_HUNDRED);
-    invariant.borrowP2PDerivation = invariant._borrowP2PDerivation_BI
-      .toBigDecimal()
-      .times(BIGDECIMAL_HUNDRED);
-  }
+  const invariant = _createP2PIndexesUpdatedInvariant(
+    event,
+    market,
+    inputToken,
+    p2pSupplyIndex,
+    p2pBorrowIndex
+  );
+  if (!invariant) return;
   invariant.save();
-
   market._lastP2PIndexesUpdatedInvariant = invariant.id;
 }
 
@@ -713,9 +651,7 @@ export function _handleP2PIndexesUpdated(
   const inputToken = getOrInitToken(market.inputToken);
   const protocol = getOrInitLendingProtocol(event.address);
 
-  if (market._lastReserveUpdate.equals(event.block.timestamp)) {
-    updateLastP2PIndexesUpdatedInvariant(event, market, inputToken, p2pBorrowIndex, p2pSupplyIndex);
-  }
+  updateLastP2PIndexesUpdatedInvariant(event, market, inputToken, p2pSupplyIndex, p2pBorrowIndex);
 
   // The token price is updated in reserveUpdated event
   // calculate new revenue
