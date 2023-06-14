@@ -100,18 +100,21 @@ export function createIndexesUpdated(
     indexesUpdated ? market._previousIndexesAndRatesHistory! : market._lastIndexesAndRatesHistory
   );
   if (!indexesUpdated) indexesUpdated = new _IndexesAndRatesHistory(id);
-  if (!lastInvariant) log.critical("No last invariant", []);
+  if (!lastInvariant) {
+    log.critical("No last invariant", []);
+    return [];
+  }
 
-  const lastP2PSupplyIndex = lastInvariant!.newP2PSupplyIndex;
-  const lastP2PBorrowIndex = lastInvariant!.newP2PBorrowIndex;
+  const lastP2PSupplyIndex = lastInvariant.newP2PSupplyIndex;
+  const lastP2PBorrowIndex = lastInvariant.newP2PBorrowIndex;
   const lastPoolSupplyIndex = market._reserveSupplyIndex;
   const lastPoolBorrowIndex = market._reserveBorrowIndex;
 
-  const timestampDiff = timestamp.minus(lastInvariant!.timestamp);
-  const blockDiff = blockNumber.minus(lastInvariant!.blockNumber);
+  const timestampDiff = timestamp.minus(lastInvariant.timestamp);
+  const blockDiff = blockNumber.minus(lastInvariant.blockNumber);
   if (timestampDiff.le(BIGINT_ONE) || blockDiff.le(BIGINT_ONE))
     log.critical("Last invariant {} is the same invariant as the actual {}", [
-      lastInvariant!.id,
+      lastInvariant.id,
       indexesUpdated.id,
     ]);
 
@@ -190,7 +193,7 @@ export function createIndexesUpdated(
   indexesUpdated.newPoolBorrowIndex = market._reserveBorrowIndex;
 
   indexesUpdated.save();
-  return [lastInvariant!, indexesUpdated];
+  return [lastInvariant, indexesUpdated];
 }
 
 export function updateMarketSnapshots(
