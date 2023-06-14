@@ -625,77 +625,79 @@ function updateLastP2PIndexesUpdatedInvariant(
     : null;
   const lastInvariant = _IndexesAndRatesHistory.load(market._lastIndexesAndRatesHistory)!;
   const id: string = `${market.id.toHex()}-${event.block.number.toString()}`;
-  const mapping = new _P2PIndexesUpdatedIndexInvariant(id);
-  mapping.market = market.id;
-  mapping.subgraphP2PBorrowIndex = lastInvariant.newP2PBorrowIndex;
-  mapping.subgraphP2PSupplyIndex = lastInvariant.newP2PSupplyIndex;
-  mapping.morphoP2PBorrowIndex = p2pBorrowIndex;
-  mapping.morphoP2PSupplyIndex = p2pSupplyIndex;
+  const invariant = new _P2PIndexesUpdatedIndexInvariant(id);
+  invariant.market = market.id;
+  invariant.blockNumber = event.block.number;
+  invariant.timestamp = event.block.timestamp;
+  invariant.subgraphP2PBorrowIndex = lastInvariant.newP2PBorrowIndex;
+  invariant.subgraphP2PSupplyIndex = lastInvariant.newP2PSupplyIndex;
+  invariant.morphoP2PBorrowIndex = p2pBorrowIndex;
+  invariant.morphoP2PSupplyIndex = p2pSupplyIndex;
 
   // Init everything 0 for first event to avoid runtime errors.
-  mapping._morphoP2PSupplyInterests_BI = BigInt.zero();
-  mapping._morphoP2PBorrowInterests_BI = BigInt.zero();
-  mapping._subgraphP2PSupplyInterests_BI = BigInt.zero();
-  mapping._subgraphP2PBorrowInterests_BI = BigInt.zero();
-  mapping.morphoP2PSupplyInterests = BigDecimal.zero();
-  mapping.morphoP2PBorrowInterests = BigDecimal.zero();
-  mapping.subgraphP2PSupplyInterests = BigDecimal.zero();
-  mapping.subgraphP2PBorrowInterests = BigDecimal.zero();
-  mapping.supplyP2PDerivation = BigDecimal.zero();
-  mapping.borrowP2PDerivation = BigDecimal.zero();
-  mapping._supplyP2PDerivation_BI = BigInt.zero();
-  mapping._borrowP2PDerivation_BI = BigInt.zero();
+  invariant._morphoP2PSupplyInterests_BI = BigInt.zero();
+  invariant._morphoP2PBorrowInterests_BI = BigInt.zero();
+  invariant._subgraphP2PSupplyInterests_BI = BigInt.zero();
+  invariant._subgraphP2PBorrowInterests_BI = BigInt.zero();
+  invariant.morphoP2PSupplyInterests = BigDecimal.zero();
+  invariant.morphoP2PBorrowInterests = BigDecimal.zero();
+  invariant.subgraphP2PSupplyInterests = BigDecimal.zero();
+  invariant.subgraphP2PBorrowInterests = BigDecimal.zero();
+  invariant.supplyP2PDerivation = BigDecimal.zero();
+  invariant.borrowP2PDerivation = BigDecimal.zero();
+  invariant._supplyP2PDerivation_BI = BigInt.zero();
+  invariant._borrowP2PDerivation_BI = BigInt.zero();
 
   // This update the different values.
   if (!!lastP2PIndexesUpdated) {
-    mapping._morphoP2PSupplyInterests_BI = mapping.morphoP2PSupplyIndex
+    invariant._morphoP2PSupplyInterests_BI = invariant.morphoP2PSupplyIndex
       .minus(lastP2PIndexesUpdated.morphoP2PSupplyIndex)
       .times(market._scaledSupplyInP2P)
       .div(pow10(market._indexesOffset));
-    mapping._morphoP2PBorrowInterests_BI = mapping.morphoP2PBorrowIndex
+    invariant._morphoP2PBorrowInterests_BI = invariant.morphoP2PBorrowIndex
       .minus(lastP2PIndexesUpdated.morphoP2PBorrowIndex)
       .times(market._scaledBorrowInP2P)
       .div(pow10(market._indexesOffset));
-    mapping._subgraphP2PSupplyInterests_BI = mapping.subgraphP2PSupplyIndex
+    invariant._subgraphP2PSupplyInterests_BI = invariant.subgraphP2PSupplyIndex
       .minus(lastP2PIndexesUpdated.subgraphP2PSupplyIndex)
       .times(market._scaledSupplyInP2P)
       .div(pow10(market._indexesOffset));
-    mapping._subgraphP2PBorrowInterests_BI = mapping.subgraphP2PBorrowIndex
+    invariant._subgraphP2PBorrowInterests_BI = invariant.subgraphP2PBorrowIndex
       .minus(lastP2PIndexesUpdated.subgraphP2PBorrowIndex)
       .times(market._scaledBorrowInP2P)
       .div(pow10(market._indexesOffset));
-    mapping.morphoP2PSupplyInterests = mapping._morphoP2PSupplyInterests_BI
+    invariant.morphoP2PSupplyInterests = invariant._morphoP2PSupplyInterests_BI
       .toBigDecimal()
       .div(pow10Decimal(inputToken.decimals));
-    mapping.morphoP2PBorrowInterests = mapping._morphoP2PBorrowInterests_BI
+    invariant.morphoP2PBorrowInterests = invariant._morphoP2PBorrowInterests_BI
       .toBigDecimal()
       .div(pow10Decimal(inputToken.decimals));
-    mapping.subgraphP2PSupplyInterests = mapping._subgraphP2PSupplyInterests_BI
+    invariant.subgraphP2PSupplyInterests = invariant._subgraphP2PSupplyInterests_BI
       .toBigDecimal()
       .div(pow10Decimal(inputToken.decimals));
-    mapping.subgraphP2PBorrowInterests = mapping._subgraphP2PBorrowInterests_BI
+    invariant.subgraphP2PBorrowInterests = invariant._subgraphP2PBorrowInterests_BI
       .toBigDecimal()
       .div(pow10Decimal(inputToken.decimals));
-    mapping._supplyP2PDerivation_BI = mapping._subgraphP2PSupplyInterests_BI.isZero()
+    invariant._supplyP2PDerivation_BI = invariant._subgraphP2PSupplyInterests_BI.isZero()
       ? BigInt.zero()
-      : mapping._morphoP2PSupplyInterests_BI
-          .minus(mapping._subgraphP2PSupplyInterests_BI)
-          .div(mapping._subgraphP2PSupplyInterests_BI);
-    mapping._borrowP2PDerivation_BI = mapping._subgraphP2PBorrowInterests_BI.isZero()
+      : invariant._morphoP2PSupplyInterests_BI
+          .minus(invariant._subgraphP2PSupplyInterests_BI)
+          .div(invariant._subgraphP2PSupplyInterests_BI);
+    invariant._borrowP2PDerivation_BI = invariant._subgraphP2PBorrowInterests_BI.isZero()
       ? BigInt.zero()
-      : mapping._morphoP2PBorrowInterests_BI
-          .minus(mapping._subgraphP2PBorrowInterests_BI)
-          .div(mapping._subgraphP2PBorrowInterests_BI);
-    mapping.supplyP2PDerivation = mapping._supplyP2PDerivation_BI
+      : invariant._morphoP2PBorrowInterests_BI
+          .minus(invariant._subgraphP2PBorrowInterests_BI)
+          .div(invariant._subgraphP2PBorrowInterests_BI);
+    invariant.supplyP2PDerivation = invariant._supplyP2PDerivation_BI
       .toBigDecimal()
       .times(BIGDECIMAL_HUNDRED);
-    mapping.borrowP2PDerivation = mapping._borrowP2PDerivation_BI
+    invariant.borrowP2PDerivation = invariant._borrowP2PDerivation_BI
       .toBigDecimal()
       .times(BIGDECIMAL_HUNDRED);
   }
-  mapping.save();
+  invariant.save();
 
-  market._lastP2PIndexesUpdatedInvariant = mapping.id;
+  market._lastP2PIndexesUpdatedInvariant = invariant.id;
 }
 
 export function _handleP2PIndexesUpdated(
