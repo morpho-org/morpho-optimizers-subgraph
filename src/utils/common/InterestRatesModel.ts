@@ -22,11 +22,11 @@ export function computeProportionIdle(
   p2pSupplyAmount: BigInt,
   p2pSupplyIndex: BigInt
 ): BigInt {
-  const offset: BigInt = pow10(indexesOffset);
+  const one: BigInt = pow10(indexesOffset);
   if (idleSupply && idleSupply.gt(BigInt.zero())) {
-    const totalP2PSupplied = p2pSupplyAmount.times(p2pSupplyIndex).div(offset);
-    const proportionIdle = idleSupply.times(offset).div(totalP2PSupplied);
-    if (proportionIdle.gt(offset)) return offset;
+    const totalP2PSupplied = p2pSupplyAmount.times(p2pSupplyIndex).div(one);
+    const proportionIdle = idleSupply.times(one).div(totalP2PSupplied);
+    if (proportionIdle.gt(one)) return one;
     return proportionIdle;
   }
   return BigInt.zero();
