@@ -1117,7 +1117,7 @@ export function updateP2PIndexesAndRates(
     __MATHS__
   );
 
-  // ?. operator not handled at the moment.
+  // ?. operator not handled by WASM transpiler at the moment.
   market._previousIndexesAndRatesHistory = indexesUpdated[0] ? indexesUpdated[0]!.id : null;
   market._lastIndexesAndRatesHistory = indexesUpdated[1]!.id;
 
@@ -1136,7 +1136,7 @@ export function updateP2PIndexesAndRates(
     market._reserveFactor_BI,
     __MATHS__
   );
-  market._p2pSupplyIndexFromRates = computeP2PIndex(
+  market._p2pSupplyIndexForRates = computeP2PIndex(
     market._p2pSupplyIndex,
     growthFactors.p2pSupplyGrowthFactor,
     growthFactors.poolSupplyGrowthFactor,
@@ -1151,7 +1151,7 @@ export function updateP2PIndexesAndRates(
     proportionIdle,
     __MATHS__
   );
-  market._p2pBorrowIndexFromRates = computeP2PIndex(
+  market._p2pBorrowIndexForRates = computeP2PIndex(
     market._p2pBorrowIndex,
     growthFactors.p2pBorrowGrowthFactor,
     growthFactors.poolBorrowGrowthFactor,
@@ -1175,7 +1175,7 @@ export function updateP2PIndexesAndRates(
       market._p2pBorrowDelta,
       market._p2pBorrowAmount,
       market._lastPoolBorrowIndex,
-      market._p2pBorrowIndexFromRates,
+      market._p2pBorrowIndexForRates,
       proportionIdle,
       __MATHS__
     ),
@@ -1191,7 +1191,7 @@ export function updateP2PIndexesAndRates(
       market._p2pSupplyDelta,
       market._p2pSupplyAmount,
       market._lastPoolSupplyIndex,
-      market._p2pSupplyIndexFromRates,
+      market._p2pSupplyIndexForRates,
       proportionIdle,
       __MATHS__
     ),

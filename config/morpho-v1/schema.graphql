@@ -1072,11 +1072,11 @@ type Market @entity {
   " The borrow rate in P2P, updated at the last pool update "
   _p2pBorrowRate: BigInt!
 
-  " The p2p supply index, updated at the last pool update, by recomputing the P2P rates. Used in monitoring "
-  _p2pSupplyIndexFromRates: BigInt!
+  " The p2p supply index, updated at the last pool update. Computed off-chain with the exact same algorithm than on-chain. Used in monitoring and to know what would be the theoretical index on the Morpho contract, and to update P2P rates "
+  _p2pSupplyIndexForRates: BigInt!
 
-  " The p2p borrow index, updated at the last pool update, by recomputing the P2P rates. Used in monitoring "
-  _p2pBorrowIndexFromRates: BigInt!
+  " The p2p borrow index, updated at the last pool update. Computed off-chain with the exact same algorithm than on-chain. Used in monitoring and to know what would be the theoretical index on the Morpho contract, and to update P2P rates "
+  _p2pBorrowIndexForRates: BigInt!
 
   " The cursor where the p2p rate is calculated from, without conversion "
   _p2pIndexCursor_BI: BigInt!
@@ -2252,7 +2252,7 @@ type UnderlyingTokenMapping @entity {
 }
 
 # Used as a monitoring value, to trace, block by block, after each ReserveData,
-#  IndexCursor or ReserveFactor update.
+#  P2PIndexCursor or P2PReserveFactor update.
 type _IndexesAndRatesHistory @entity {
   " ${marketAddress}-${blockNumber} "
   id: ID!
@@ -2309,12 +2309,21 @@ type _IndexesAndRatesHistory @entity {
   lastPoolBorrowIndex: BigInt!
 }
 
+# Used as a monitoring value, to trace, event by event, after each P2PIndexesUpdated,
+#  if the theoretical value of the P2P rates and indexes computed onchain have not
+#  too much derivation from the P2P rates and indexes computed offchain.
 type _P2PIndexesUpdatedIndexInvariant @entity {
   " ${marketAddress} - ${blockNumber} "
   id: ID!
 
   " The address of the updated market indexes "
   market: Market!
+
+  " Block number of the P2PIndexesUpdated event "
+  blockNumber: BigInt!
+
+  " Timestamp of the P2PIndexesUpdated event "
+  timestamp: BigInt!
 
   " P2P Supply Index emitted by the contract "
   morphoP2PSupplyIndex: BigInt!
