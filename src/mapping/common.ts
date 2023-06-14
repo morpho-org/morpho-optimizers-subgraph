@@ -624,14 +624,16 @@ function updateLastP2PIndexesUpdatedInvariant(
   market: Market,
   inputToken: Token,
   p2pSupplyIndex: BigInt,
-  p2pBorrowIndex: BigInt
+  p2pBorrowIndex: BigInt,
+  __MATHS__: IMaths
 ): void {
   const invariant = _createP2PIndexesUpdatedInvariant(
     event,
     market,
     inputToken,
     p2pSupplyIndex,
-    p2pBorrowIndex
+    p2pBorrowIndex,
+    __MATHS__
   );
   if (!invariant) return;
   invariant.save();
@@ -651,7 +653,14 @@ export function _handleP2PIndexesUpdated(
   const inputToken = getOrInitToken(market.inputToken);
   const protocol = getOrInitLendingProtocol(event.address);
 
-  updateLastP2PIndexesUpdatedInvariant(event, market, inputToken, p2pSupplyIndex, p2pBorrowIndex);
+  updateLastP2PIndexesUpdatedInvariant(
+    event,
+    market,
+    inputToken,
+    p2pSupplyIndex,
+    p2pBorrowIndex,
+    __MATHS__
+  );
 
   // The token price is updated in reserveUpdated event
   // calculate new revenue

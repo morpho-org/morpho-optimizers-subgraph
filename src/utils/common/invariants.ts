@@ -4,13 +4,15 @@ import { Market, Token, _P2PIndexesUpdatedInvariant } from "../../../generated/m
 import { pow10, pow10Decimal } from "../../bn";
 import { BIGDECIMAL_HUNDRED } from "../../constants";
 import { initP2PIndexesUpdatedIndexInvariant } from "../initializers";
+import { IMaths } from "../maths/maths.interface";
 
 export function _createP2PIndexesUpdatedInvariant(
   event: ethereum.Event,
   market: Market,
   inputToken: Token,
   p2pSupplyIndex: BigInt,
-  p2pBorrowIndex: BigInt
+  p2pBorrowIndex: BigInt,
+  __MATHS__: IMaths
 ): _P2PIndexesUpdatedInvariant | null {
   const lastP2PIndexesUpdated = market._lastP2PIndexesUpdatedInvariant
     ? _P2PIndexesUpdatedInvariant.load(market._lastP2PIndexesUpdatedInvariant!)
@@ -26,22 +28,22 @@ export function _createP2PIndexesUpdatedInvariant(
 
   // This update the different values.
   if (!!lastP2PIndexesUpdated) {
-    invariant._morphoP2PSupplyInterests_BI = invariant.morphoP2PSupplyIndex
-      .minus(lastP2PIndexesUpdated.morphoP2PSupplyIndex)
-      .times(market._scaledSupplyInP2P)
-      .div(pow10(market._indexesOffset));
-    invariant._morphoP2PBorrowInterests_BI = invariant.morphoP2PBorrowIndex
-      .minus(lastP2PIndexesUpdated.morphoP2PBorrowIndex)
-      .times(market._scaledBorrowInP2P)
-      .div(pow10(market._indexesOffset));
-    invariant._subgraphP2PSupplyInterests_BI = invariant.subgraphP2PSupplyIndex
-      .minus(lastP2PIndexesUpdated.subgraphP2PSupplyIndex)
-      .times(market._scaledSupplyInP2P)
-      .div(pow10(market._indexesOffset));
-    invariant._subgraphP2PBorrowInterests_BI = invariant.subgraphP2PBorrowIndex
-      .minus(lastP2PIndexesUpdated.subgraphP2PBorrowIndex)
-      .times(market._scaledBorrowInP2P)
-      .div(pow10(market._indexesOffset));
+    invariant._morphoP2PSupplyInterests_BI = __MATHS__.indexMul(
+      invariant.morphoP2PSupplyIndex.minus(lastP2PIndexesUpdated.morphoP2PSupplyIndex),
+      market._scaledSupplyInP2P
+    );
+    invariant._morphoP2PBorrowInterests_BI = __MATHS__.indexMul(
+      invariant.morphoP2PBorrowIndex.minus(lastP2PIndexesUpdated.morphoP2PBorrowIndex),
+      market._scaledBorrowInP2P
+    );
+    invariant._subgraphP2PSupplyInterests_BI = __MATHS__.indexMul(
+      invariant.subgraphP2PSupplyIndex.minus(lastP2PIndexesUpdated.subgraphP2PSupplyIndex),
+      market._scaledSupplyInP2P
+    );
+    invariant._subgraphP2PBorrowInterests_BI = __MATHS__.indexMul(
+      invariant.subgraphP2PBorrowIndex.minus(lastP2PIndexesUpdated.subgraphP2PBorrowIndex),
+      market._scaledBorrowInP2P
+    );
     invariant.morphoP2PSupplyInterests = invariant._morphoP2PSupplyInterests_BI
       .toBigDecimal()
       .div(pow10Decimal(inputToken.decimals));
