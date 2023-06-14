@@ -13,7 +13,7 @@ import { ProtocolDataProvider } from "../../../generated/morpho-v1/MorphoAaveV2/
 import { Market, UnderlyingTokenMapping } from "../../../generated/morpho-v1/schema";
 import { BASE_UNITS, WAD } from "../../constants";
 import {
-  createOrSetInitialEmptyIndexesAndRatesHistory,
+  createOrInitIndexesAndRatesHistory,
   getOrInitLendingProtocol,
   getOrInitMarketList,
   getOrInitToken,
@@ -124,7 +124,7 @@ export function handleMarketCreated(event: MarketCreated): void {
   market._lastPoolBorrowIndex = morphoPoolIndexes.getPoolBorrowIndex();
   market._lastPoolUpdate = morphoPoolIndexes.getLastUpdateTimestamp();
   market._previousIndexesAndRatesHistory = null;
-  market._lastIndexesAndRatesHistory = createOrSetInitialEmptyIndexesAndRatesHistory(
+  market._lastIndexesAndRatesHistory = createOrInitIndexesAndRatesHistory(
     event.block.number,
     event.block.timestamp,
     market

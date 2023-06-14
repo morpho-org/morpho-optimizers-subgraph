@@ -41,7 +41,7 @@ import {
   computeProportionDelta,
 } from "./utils/common/InterestRatesModel";
 import {
-  createOrSetInitialEmptyIndexesAndRatesHistory,
+  createOrInitIndexesAndRatesHistory,
   getMarket,
   getOrInitToken,
 } from "./utils/initializers";
@@ -94,29 +94,51 @@ export function createIndexesUpdated(
   // This is an edge case when we're on the first block on the market has been created.
   // We update the initial IndexesAndRatesHistory with the first data, and don't set the previous one.
   if (indexesUpdated && !market._previousIndexesAndRatesHistory)
-    return [null, createOrSetInitialEmptyIndexesAndRatesHistory(blockNumber, timestamp, market)];
+    return [null, createOrInitIndexesAndRatesHistory(blockNumber, timestamp, market)];
 
-  const lastInvariant = _IndexesAndRatesHistory.load(
-    indexesUpdated ? market._previousIndexesAndRatesHistory! : market._lastIndexesAndRatesHistory
-  );
+  const lastInvariantId = indexesUpdated
+    ? market._previousIndexesAndRatesHistory!
+    : market._lastIndexesAndRatesHistory;
+  const lastInvariant = _IndexesAndRatesHistory.load(lastInvariantId);
   if (!indexesUpdated) indexesUpdated = new _IndexesAndRatesHistory(id);
   if (!lastInvariant) {
     log.critical("No last invariant", []);
     return [];
   }
 
-  const lastP2PSupplyIndex = lastInvariant.newP2PSupplyIndex;
-  const lastP2PBorrowIndex = lastInvariant.newP2PBorrowIndex;
-  const lastPoolSupplyIndex = market._reserveSupplyIndex;
-  const lastPoolBorrowIndex = market._reserveBorrowIndex;
+  // Used to compute the new correct pool indexes from the reserve indexes.
+  // Mimic the on-chain behavior for AAVE and Compound.
+  // Because a reserve update happens everytime before Compound interaction, the
+  // reserveBlockDiff will always equal zero, so reserveSupplyIndex == newPoolSupplyIndex.
+  const reserveTimestampDiff = timestamp.minus(market._lastReserveUpdate);
+  const reserveBlockDiff = blockNumber.minus(market._lastReserveUpdate);
 
+  // Used to compute the new P2P indexes from the previous P2P indexes.
   const timestampDiff = timestamp.minus(lastInvariant.timestamp);
   const blockDiff = blockNumber.minus(lastInvariant.blockNumber);
-  if (timestampDiff.le(BIGINT_ONE) || blockDiff.le(BIGINT_ONE))
+  if (timestampDiff.le(BIGINT_ONE) || blockDiff.le(BIGINT_ONE)) {
     log.critical("Last invariant {} is the same invariant as the actual {}", [
       lastInvariant.id,
       indexesUpdated.id,
     ]);
+  }
+
+  const lastP2PSupplyIndex = lastInvariant.newP2PSupplyIndex;
+  const lastP2PBorrowIndex = lastInvariant.newP2PBorrowIndex;
+  const lastPoolSupplyIndex = lastInvariant.newPoolSupplyIndex;
+  const lastPoolBorrowIndex = lastInvariant.newPoolBorrowIndex;
+  const newPoolSupplyIndex = __MATHS__.computeNewSupplyIndex(
+    market._reserveSupplyIndex,
+    market._poolSupplyRate,
+    reserveTimestampDiff,
+    reserveBlockDiff
+  );
+  const newPoolBorrowIndex = __MATHS__.computeNewBorrowIndex(
+    market._reserveBorrowIndex,
+    market._poolSupplyRate,
+    reserveTimestampDiff,
+    reserveBlockDiff
+  );
 
   const proportionIdle = computeProportionIdle(
     market._indexesOffset,
@@ -189,8 +211,8 @@ export function createIndexesUpdated(
     timestampDiff,
     blockDiff
   );
-  indexesUpdated.newPoolSupplyIndex = market._reserveSupplyIndex;
-  indexesUpdated.newPoolBorrowIndex = market._reserveBorrowIndex;
+  indexesUpdated.newPoolSupplyIndex = newPoolSupplyIndex;
+  indexesUpdated.newPoolBorrowIndex = newPoolBorrowIndex;
 
   indexesUpdated.save();
   return [lastInvariant, indexesUpdated];

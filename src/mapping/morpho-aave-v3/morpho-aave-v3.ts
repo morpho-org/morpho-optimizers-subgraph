@@ -53,7 +53,7 @@ import { Market, UnderlyingTokenMapping } from "../../../generated/morpho-v1/sch
 import { AAVE_V3_ORACLE_OFFSET, BASE_UNITS, RAY_BI } from "../../constants";
 import { updateP2PIndexesAndRates } from "../../helpers";
 import {
-  createOrSetInitialEmptyIndexesAndRatesHistory,
+  createOrInitIndexesAndRatesHistory,
   getMarket,
   getOrInitLendingProtocol,
   getOrInitMarketList,
@@ -393,7 +393,7 @@ export function handleMarketCreated(event: MarketCreated): void {
   market._p2pSupplyRate = BigInt.zero();
   market._p2pBorrowRate = BigInt.zero();
   market._previousIndexesAndRatesHistory = null;
-  market._lastIndexesAndRatesHistory = createOrSetInitialEmptyIndexesAndRatesHistory(
+  market._lastIndexesAndRatesHistory = createOrInitIndexesAndRatesHistory(
     event.block.number,
     event.block.timestamp,
     market

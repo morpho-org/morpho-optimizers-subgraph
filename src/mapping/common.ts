@@ -999,7 +999,7 @@ export function _handleReserveUpdate(params: ReserveUpdateParams, __MATHS__: IMa
   market._reserveBorrowIndex = params.reserveBorrowIndex;
   market._poolSupplyRate = params.poolSupplyRate;
   market._poolBorrowRate = params.poolBorrowRate;
-  market._lastReserveUpdate = params.event.block.timestamp;
+  market._lastReserveUpdate = params.lastReserveUpdate;
 
   // update rates as APR as it is done for aave subgraphs
   const supplyRate = __MATHS__

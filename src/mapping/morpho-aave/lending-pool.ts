@@ -19,6 +19,7 @@ export class ReserveUpdateParams {
     public readonly protocol: LendingProtocol,
     public readonly reserveSupplyIndex: BigInt,
     public readonly reserveBorrowIndex: BigInt,
+    public readonly lastReserveUpdate: BigInt,
 
     public readonly poolSupplyRate: BigInt,
     public readonly poolBorrowRate: BigInt
@@ -52,6 +53,7 @@ export function handleReserveDataUpdated(event: ReserveDataUpdated): void {
     protocol,
     event.params.liquidityIndex,
     event.params.variableBorrowIndex,
+    event.block.timestamp,
     event.params.liquidityRate,
     event.params.variableBorrowRate
   );

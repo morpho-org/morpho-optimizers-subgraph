@@ -18,7 +18,7 @@ import {
   WRAPPED_ETH,
 } from "../../constants";
 import {
-  createOrSetInitialEmptyIndexesAndRatesHistory,
+  createOrInitIndexesAndRatesHistory,
   getOrInitLendingProtocol,
   getOrInitMarketList,
   getOrInitToken,
@@ -119,7 +119,7 @@ export function handleMarketCreated(event: MarketCreated): void {
   market._p2pSupplyRate = BigInt.zero();
   market._p2pBorrowRate = BigInt.zero();
   market._previousIndexesAndRatesHistory = null;
-  market._lastIndexesAndRatesHistory = createOrSetInitialEmptyIndexesAndRatesHistory(
+  market._lastIndexesAndRatesHistory = createOrInitIndexesAndRatesHistory(
     event.block.number,
     event.block.timestamp,
     market

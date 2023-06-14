@@ -37,6 +37,7 @@ function handleAccrueInterest(event: ethereum.Event): void {
       protocol,
       supplyPoolIndex,
       borrowPoolIndex,
+      event.block.number,
       supplyPoolRate,
       borrowPoolRate
     ),

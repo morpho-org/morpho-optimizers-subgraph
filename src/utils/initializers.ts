@@ -31,7 +31,7 @@ import {
   MORPHO_COMPOUND_ADDRESS,
 } from "../constants";
 
-export function createOrSetInitialEmptyIndexesAndRatesHistory(
+export function createOrInitIndexesAndRatesHistory(
   blockNumber: BigInt,
   timestamp: BigInt,
   market: Market
