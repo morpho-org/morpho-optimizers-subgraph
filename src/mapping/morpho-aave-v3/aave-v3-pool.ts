@@ -59,6 +59,7 @@ export function handleReserveDataUpdated(event: ReserveDataUpdated): void {
     protocol,
     event.params.liquidityIndex,
     event.params.variableBorrowIndex,
+    event.block.timestamp,
     event.params.liquidityRate,
     event.params.variableBorrowRate
   );

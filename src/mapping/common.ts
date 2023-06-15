@@ -10,6 +10,10 @@ import {
   Position,
   Repay,
   Withdraw,
+  _IndexesAndRatesHistory,
+  _P2PIndexesUpdatedInvariant,
+  Market,
+  Token,
 } from "../../generated/morpho-v1/schema";
 import { pow10, pow10Decimal } from "../bn";
 import {
@@ -29,10 +33,11 @@ import {
   subtractPosition,
   updateFinancials,
   updateMarketSnapshots,
-  updateP2PRates,
+  updateP2PIndexesAndRates,
   updateProtocolPosition,
   updateSnapshots,
 } from "../helpers";
+import { _createP2PIndexesUpdatedInvariant } from "../utils/common/invariants";
 import { getMarket, getOrInitLendingProtocol, getOrInitToken } from "../utils/initializers";
 import { IMaths } from "../utils/maths/maths.interface";
 
@@ -609,18 +614,48 @@ export function _handleBorrowed(
   updateProtocolPosition(protocol, market);
 }
 
+function updateLastP2PIndexesUpdatedInvariant(
+  event: ethereum.Event,
+  market: Market,
+  inputToken: Token,
+  p2pSupplyIndex: BigInt,
+  p2pBorrowIndex: BigInt,
+  __MATHS__: IMaths
+): void {
+  const invariant = _createP2PIndexesUpdatedInvariant(
+    event,
+    market,
+    inputToken,
+    p2pSupplyIndex,
+    p2pBorrowIndex,
+    __MATHS__
+  );
+  if (!invariant) return;
+  invariant.save();
+  market._lastP2PIndexesUpdatedInvariant = invariant.id;
+}
+
 export function _handleP2PIndexesUpdated(
   event: ethereum.Event,
   marketAddress: Address,
   poolSupplyIndex: BigInt,
   p2pSupplyIndex: BigInt,
   poolBorrowIndex: BigInt,
-  p2pBorrowIndex: BigInt
+  p2pBorrowIndex: BigInt,
+  __MATHS__: IMaths
 ): void {
   const market = getMarket(marketAddress);
-
-  const protocol = getOrInitLendingProtocol(event.address);
   const inputToken = getOrInitToken(market.inputToken);
+  const protocol = getOrInitLendingProtocol(event.address);
+
+  updateLastP2PIndexesUpdatedInvariant(
+    event,
+    market,
+    inputToken,
+    p2pSupplyIndex,
+    p2pBorrowIndex,
+    __MATHS__
+  );
 
   // The token price is updated in reserveUpdated event
   // calculate new revenue
@@ -904,12 +939,17 @@ export function _handleReserveUpdate(params: ReserveUpdateParams, __MATHS__: IMa
   market._reserveBorrowIndex = params.reserveBorrowIndex;
   market._poolSupplyRate = params.poolSupplyRate;
   market._poolBorrowRate = params.poolBorrowRate;
-  market._lastReserveUpdate = params.event.block.timestamp;
+  market._lastReserveUpdate = params.lastReserveUpdate;
 
   // update rates as APR as it is done for aave subgraphs
-  const supplyRate = params.poolSupplyRate.toBigDecimal().div(pow10Decimal(market._indexesOffset));
-
-  const borrowRate = params.poolBorrowRate.toBigDecimal().div(pow10Decimal(market._indexesOffset));
+  const supplyRate = __MATHS__
+    .toAPR(params.poolSupplyRate)
+    .toBigDecimal()
+    .div(pow10Decimal(market._indexesOffset));
+  const borrowRate = __MATHS__
+    .toAPR(params.poolBorrowRate)
+    .toBigDecimal()
+    .div(pow10Decimal(market._indexesOffset));
   const poolSupplyRate = createInterestRate(
     market.id,
     InterestRateSide.LENDER,
@@ -930,7 +970,7 @@ export function _handleReserveUpdate(params: ReserveUpdateParams, __MATHS__: IMa
     poolBorrowRate.id,
   ];
 
-  updateP2PRates(market, __MATHS__);
+  updateP2PIndexesAndRates(params.event, market, __MATHS__);
 
   updateProtocolPosition(params.protocol, market);
 

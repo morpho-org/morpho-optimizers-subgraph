@@ -18,6 +18,7 @@ import {
   WRAPPED_ETH,
 } from "../../constants";
 import {
+  createOrInitIndexesAndRatesHistory,
   getOrInitLendingProtocol,
   getOrInitMarketList,
   getOrInitToken,
@@ -113,10 +114,17 @@ export function handleMarketCreated(event: MarketCreated): void {
 
   market._p2pSupplyIndex = morpho.p2pSupplyIndex(event.params._poolToken);
   market._p2pBorrowIndex = morpho.p2pBorrowIndex(event.params._poolToken);
-  market._p2pSupplyIndexFromRates = morpho.p2pSupplyIndex(event.params._poolToken);
-  market._p2pBorrowIndexFromRates = morpho.p2pBorrowIndex(event.params._poolToken);
+  market._p2pSupplyIndexForRates = morpho.p2pSupplyIndex(event.params._poolToken);
+  market._p2pBorrowIndexForRates = morpho.p2pBorrowIndex(event.params._poolToken);
   market._p2pSupplyRate = BigInt.zero();
   market._p2pBorrowRate = BigInt.zero();
+  market._previousIndexesAndRatesHistory = null;
+  market._lastIndexesAndRatesHistory = createOrInitIndexesAndRatesHistory(
+    event.block.number,
+    event.block.timestamp,
+    market
+  ).id;
+  market._lastP2PIndexesUpdatedInvariant = null;
 
   market._lastPoolSupplyIndex = morphoPoolIndexes.getLastSupplyPoolIndex();
   market._lastPoolBorrowIndex = morphoPoolIndexes.getLastBorrowPoolIndex();

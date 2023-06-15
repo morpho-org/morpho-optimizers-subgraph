@@ -1,4 +1,4 @@
-import { Address, BigDecimal, Bytes, log } from "@graphprotocol/graph-ts";
+import { Address, BigDecimal, BigInt, Bytes, ethereum, log } from "@graphprotocol/graph-ts";
 
 import { ERC20 } from "../../generated/morpho-v1/MorphoAaveV2/ERC20";
 import { LendingPool } from "../../generated/morpho-v1/MorphoAaveV2/LendingPool";
@@ -8,7 +8,14 @@ import { AaveV3AddressesProvider } from "../../generated/morpho-v1/MorphoAaveV3/
 import { MorphoAaveV3 } from "../../generated/morpho-v1/MorphoAaveV3/MorphoAaveV3";
 import { Comptroller } from "../../generated/morpho-v1/MorphoCompound/Comptroller";
 import { MorphoCompound } from "../../generated/morpho-v1/MorphoCompound/MorphoCompound";
-import { Token, LendingProtocol, Market, _MarketList } from "../../generated/morpho-v1/schema";
+import {
+  Token,
+  LendingProtocol,
+  Market,
+  _MarketList,
+  _IndexesAndRatesHistory,
+  _P2PIndexesUpdatedInvariant,
+} from "../../generated/morpho-v1/schema";
 import {
   AaveV3Pool as AaveV3PoolTemplate,
   AaveV3PoolConfigurator,
@@ -24,6 +31,74 @@ import {
   MORPHO_AAVE_V3_ADDRESS,
   MORPHO_COMPOUND_ADDRESS,
 } from "../constants";
+
+export function createOrInitIndexesAndRatesHistory(
+  blockNumber: BigInt,
+  timestamp: BigInt,
+  market: Market
+): _IndexesAndRatesHistory {
+  const id = `${market.id.toHex()}-${blockNumber.toString()}`;
+  let invariantIndexes = _IndexesAndRatesHistory.load(id);
+  if (!invariantIndexes) invariantIndexes = new _IndexesAndRatesHistory(id);
+  invariantIndexes.market = market.id;
+  invariantIndexes.blockNumber = blockNumber;
+  invariantIndexes.blockDiff = BigInt.zero();
+  invariantIndexes.timestamp = timestamp;
+  invariantIndexes.timestampDiff = BigInt.zero();
+
+  invariantIndexes.newP2PSupplyIndex = market._p2pSupplyIndex;
+  invariantIndexes.newP2PBorrowIndex = market._p2pBorrowIndex;
+  invariantIndexes.newPoolSupplyIndex = market._reserveSupplyIndex;
+  invariantIndexes.newPoolBorrowIndex = market._reserveBorrowIndex;
+
+  invariantIndexes.lastP2PBorrowIndex = BigInt.zero();
+  invariantIndexes.lastP2PSupplyIndex = BigInt.zero();
+  invariantIndexes.lastPoolSupplyIndex = BigInt.zero();
+  invariantIndexes.lastPoolBorrowIndex = BigInt.zero();
+
+  invariantIndexes.newP2PBorrowRate = market._p2pBorrowRate;
+  invariantIndexes.newP2PSupplyRate = market._p2pSupplyRate;
+  invariantIndexes.newPoolSupplyRate = market._poolSupplyRate;
+  invariantIndexes.newPoolBorrowRate = market._poolBorrowRate;
+
+  invariantIndexes.save();
+  return invariantIndexes;
+}
+
+export function initP2PIndexesUpdatedIndexInvariant(
+  event: ethereum.Event,
+  market: Market,
+  p2pSupplyIndex: BigInt,
+  p2pBorrowIndex: BigInt
+): _P2PIndexesUpdatedInvariant | null {
+  const lastInvariant = _IndexesAndRatesHistory.load(market._lastIndexesAndRatesHistory)!;
+  if (!lastInvariant) return null;
+
+  const id: string = `${market.id.toHex()}-${event.block.number.toString()}`;
+  const invariant = new _P2PIndexesUpdatedInvariant(id);
+  invariant.market = market.id;
+  invariant.blockNumber = event.block.number;
+  invariant.timestamp = event.block.timestamp;
+  invariant.subgraphP2PBorrowIndex = lastInvariant.newP2PBorrowIndex;
+  invariant.subgraphP2PSupplyIndex = lastInvariant.newP2PSupplyIndex;
+  invariant.morphoP2PSupplyIndex = p2pSupplyIndex;
+  invariant.morphoP2PBorrowIndex = p2pBorrowIndex;
+
+  // Init everything 0 for first event to avoid runtime errors.
+  invariant._morphoP2PSupplyInterests_BI = BigInt.zero();
+  invariant._morphoP2PBorrowInterests_BI = BigInt.zero();
+  invariant._subgraphP2PSupplyInterests_BI = BigInt.zero();
+  invariant._subgraphP2PBorrowInterests_BI = BigInt.zero();
+  invariant.morphoP2PSupplyInterests = BigDecimal.zero();
+  invariant.morphoP2PBorrowInterests = BigDecimal.zero();
+  invariant.subgraphP2PSupplyInterests = BigDecimal.zero();
+  invariant.subgraphP2PBorrowInterests = BigDecimal.zero();
+  invariant.supplyP2PDerivation = BigDecimal.zero();
+  invariant.borrowP2PDerivation = BigDecimal.zero();
+  invariant._supplyP2PDerivation_BI = BigInt.zero();
+  invariant._borrowP2PDerivation_BI = BigInt.zero();
+  return invariant;
+}
 
 export const getOrInitToken = (tokenAddress: Bytes): Token => {
   let token = Token.load(tokenAddress);

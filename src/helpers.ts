@@ -14,6 +14,8 @@ import {
   PositionSnapshot,
   _ActiveAccount,
   _PositionCounter,
+  _IndexesAndRatesHistory,
+  _MarketList,
 } from "../generated/morpho-v1/schema";
 
 import { pow10, pow10Decimal } from "./bn";
@@ -28,14 +30,21 @@ import {
   InterestRateSide,
   InterestRateType,
   BIGDECIMAL_HUNDRED,
+  BIGINT_ONE,
 } from "./constants";
 import {
   computeGrowthFactors,
   computeP2PBorrowRate,
   computeP2PIndex,
   computeP2PSupplyRate,
+  computeProportionIdle,
+  computeProportionDelta,
 } from "./utils/common/InterestRatesModel";
-import { getMarket, getOrInitToken } from "./utils/initializers";
+import {
+  createOrInitIndexesAndRatesHistory,
+  getMarket,
+  getOrInitToken,
+} from "./utils/initializers";
 import { IMaths } from "./utils/maths/maths.interface";
 
 function getDay(timestamp: BigInt): BigInt {
@@ -71,6 +80,142 @@ export function createInterestRate(
   interestRate.save();
 
   return interestRate;
+}
+
+export function createIndexesUpdated(
+  blockNumber: BigInt,
+  timestamp: BigInt,
+  market: Market,
+  __MATHS__: IMaths
+): (_IndexesAndRatesHistory | null)[] {
+  const id: string = `${market.id.toHex()}-${blockNumber.toString()}`;
+  let indexesUpdated = _IndexesAndRatesHistory.load(id);
+
+  // This is an edge case when we're on the first block on the market has been created.
+  // We update the initial IndexesAndRatesHistory with the first data, and don't set the previous one.
+  if (indexesUpdated && !market._previousIndexesAndRatesHistory)
+    return [null, createOrInitIndexesAndRatesHistory(blockNumber, timestamp, market)];
+
+  const lastInvariantId = indexesUpdated
+    ? market._previousIndexesAndRatesHistory!
+    : market._lastIndexesAndRatesHistory;
+  const lastInvariant = _IndexesAndRatesHistory.load(lastInvariantId);
+  if (!indexesUpdated) indexesUpdated = new _IndexesAndRatesHistory(id);
+  if (!lastInvariant) {
+    log.critical("No last invariant", []);
+    return [];
+  }
+
+  // Used to compute the new correct pool indexes from the reserve indexes.
+  // Mimic the on-chain behavior for AAVE and Compound.
+  // Because a reserve update happens everytime before Compound interaction, the
+  // reserveBlockDiff will always equal zero, so reserveSupplyIndex == newPoolSupplyIndex.
+  const reserveTimestampDiff = timestamp.minus(market._lastReserveUpdate);
+  const reserveBlockDiff = blockNumber.minus(market._lastReserveUpdate);
+
+  // Used to compute the new P2P indexes from the previous P2P indexes.
+  const timestampDiff = timestamp.minus(lastInvariant.timestamp);
+  const blockDiff = blockNumber.minus(lastInvariant.blockNumber);
+  if (timestampDiff.le(BigInt.zero()) || blockDiff.le(BigInt.zero())) {
+    log.critical("Last invariant {} is the same invariant as the actual {}", [
+      lastInvariant.id,
+      indexesUpdated.id,
+    ]);
+  }
+
+  const lastP2PSupplyIndex = lastInvariant.newP2PSupplyIndex;
+  const lastP2PBorrowIndex = lastInvariant.newP2PBorrowIndex;
+  const lastPoolSupplyIndex = lastInvariant.newPoolSupplyIndex;
+  const lastPoolBorrowIndex = lastInvariant.newPoolBorrowIndex;
+  const newPoolSupplyIndex = __MATHS__.computeNewSupplyIndex(
+    market._reserveSupplyIndex,
+    market._poolSupplyRate,
+    reserveTimestampDiff,
+    reserveBlockDiff
+  );
+  const newPoolBorrowIndex = __MATHS__.computeNewBorrowIndex(
+    market._reserveBorrowIndex,
+    market._poolSupplyRate,
+    reserveTimestampDiff,
+    reserveBlockDiff
+  );
+
+  const proportionIdle = computeProportionIdle(
+    market._indexesOffset,
+    market._idleSupply,
+    market._p2pSupplyAmount,
+    lastP2PSupplyIndex
+  );
+  const supplyProportionDelta = computeProportionDelta(
+    market._p2pSupplyDelta,
+    market._p2pSupplyAmount,
+    lastPoolSupplyIndex,
+    lastP2PSupplyIndex,
+    proportionIdle,
+    __MATHS__
+  );
+  const borrowProportionDelta = computeProportionDelta(
+    market._p2pSupplyDelta,
+    market._p2pSupplyAmount,
+    lastPoolSupplyIndex,
+    lastP2PSupplyIndex,
+    proportionIdle,
+    __MATHS__
+  );
+
+  const newP2PSupplyRate = computeP2PSupplyRate(
+    market._poolBorrowRate,
+    market._poolSupplyRate,
+    market._p2pIndexCursor_BI,
+    market._reserveFactor_BI,
+    supplyProportionDelta,
+    proportionIdle,
+    __MATHS__
+  );
+
+  const newP2PBorrowRate = computeP2PBorrowRate(
+    market._poolBorrowRate,
+    market._poolSupplyRate,
+    market._p2pIndexCursor_BI,
+    market._reserveFactor_BI,
+    borrowProportionDelta,
+    proportionIdle,
+    __MATHS__
+  );
+
+  indexesUpdated.market = market.id;
+  indexesUpdated.blockNumber = blockNumber;
+  indexesUpdated.blockDiff = blockDiff;
+  indexesUpdated.timestamp = timestamp;
+  indexesUpdated.timestampDiff = timestampDiff;
+
+  indexesUpdated.lastP2PSupplyIndex = lastP2PSupplyIndex;
+  indexesUpdated.lastP2PBorrowIndex = lastP2PBorrowIndex;
+  indexesUpdated.lastPoolSupplyIndex = lastPoolSupplyIndex;
+  indexesUpdated.lastPoolBorrowIndex = lastPoolBorrowIndex;
+
+  indexesUpdated.newP2PSupplyRate = newP2PSupplyRate;
+  indexesUpdated.newP2PBorrowRate = newP2PBorrowRate;
+  indexesUpdated.newPoolSupplyRate = market._poolSupplyRate;
+  indexesUpdated.newPoolBorrowRate = market._poolBorrowRate;
+
+  indexesUpdated.newP2PSupplyIndex = __MATHS__.computeNewSupplyIndex(
+    lastP2PSupplyIndex,
+    newP2PSupplyRate,
+    timestampDiff,
+    blockDiff
+  );
+  indexesUpdated.newP2PBorrowIndex = __MATHS__.computeNewBorrowIndex(
+    lastP2PBorrowIndex,
+    newP2PBorrowRate,
+    timestampDiff,
+    blockDiff
+  );
+  indexesUpdated.newPoolSupplyIndex = newPoolSupplyIndex;
+  indexesUpdated.newPoolBorrowIndex = newPoolBorrowIndex;
+
+  indexesUpdated.save();
+  return [lastInvariant, indexesUpdated];
 }
 
 export function updateMarketSnapshots(
@@ -974,19 +1119,45 @@ export function updateProtocolPosition(protocol: LendingProtocol, market: Market
   market.save();
 }
 
-function computeProportionIdle(market: Market): BigInt {
-  const offset = pow10(market._indexesOffset);
-  if (market._idleSupply && market._idleSupply!.gt(BigInt.zero())) {
-    const totalP2PSupplied = market._p2pSupplyAmount.times(market._p2pSupplyIndex).div(offset);
-    const proportionIdle = market._idleSupply!.times(offset).div(totalP2PSupplied);
-    if (proportionIdle.gt(offset)) return offset;
-    return proportionIdle;
+export function updateP2PIndexesAndRates(
+  event: ethereum.Event,
+  market: Market,
+  __MATHS__: IMaths
+): void {
+  const rates: string[] | null = market.rates;
+  if (!rates) {
+    log.debug("Rates have not been initialized", []);
+    return;
   }
-  return BigInt.zero();
-}
+  if (rates.length < 4) {
+    log.debug(
+      "Rate error, tried to call updateP2PIndexesAndRates before initializing reserve rates",
+      []
+    );
+    return;
+  }
 
-export function updateP2PRates(market: Market, __MATHS__: IMaths): void {
-  const proportionIdle = computeProportionIdle(market);
+  // Will throw with Index out of Range if array is smaller than 4.
+  const supplyRateId = rates[0];
+  const borrowRateId = rates[3];
+
+  const indexesUpdated = createIndexesUpdated(
+    event.block.number,
+    event.block.timestamp,
+    market,
+    __MATHS__
+  );
+
+  // ?. operator not handled by WASM transpiler at the moment.
+  market._previousIndexesAndRatesHistory = indexesUpdated[0] ? indexesUpdated[0]!.id : null;
+  market._lastIndexesAndRatesHistory = indexesUpdated[1]!.id;
+
+  const proportionIdle = computeProportionIdle(
+    market._indexesOffset,
+    market._idleSupply,
+    market._p2pSupplyAmount,
+    market._p2pSupplyIndex
+  );
   const growthFactors = computeGrowthFactors(
     market._reserveSupplyIndex,
     market._reserveBorrowIndex,
@@ -996,47 +1167,65 @@ export function updateP2PRates(market: Market, __MATHS__: IMaths): void {
     market._reserveFactor_BI,
     __MATHS__
   );
-  market._p2pSupplyIndexFromRates = computeP2PIndex(
-    market._lastPoolSupplyIndex,
+  market._p2pSupplyIndexForRates = computeP2PIndex(
     market._p2pSupplyIndex,
     growthFactors.p2pSupplyGrowthFactor,
     growthFactors.poolSupplyGrowthFactor,
-    market._p2pSupplyDelta,
-    market._p2pSupplyAmount,
+    computeProportionDelta(
+      market._p2pSupplyDelta,
+      market._p2pSupplyAmount,
+      market._lastPoolSupplyIndex,
+      market._p2pSupplyIndex,
+      proportionIdle,
+      __MATHS__
+    ),
     proportionIdle,
     __MATHS__
   );
-  market._p2pBorrowIndexFromRates = computeP2PIndex(
-    market._lastPoolBorrowIndex,
+  market._p2pBorrowIndexForRates = computeP2PIndex(
     market._p2pBorrowIndex,
     growthFactors.p2pBorrowGrowthFactor,
     growthFactors.poolBorrowGrowthFactor,
-    market._p2pBorrowDelta,
-    market._p2pBorrowAmount,
+    computeProportionDelta(
+      market._p2pBorrowDelta,
+      market._p2pBorrowAmount,
+      market._lastPoolBorrowIndex,
+      market._p2pBorrowIndex,
+      proportionIdle,
+      __MATHS__
+    ),
     proportionIdle,
     __MATHS__
   );
   market._p2pBorrowRate = computeP2PBorrowRate(
     market._poolBorrowRate,
     market._poolSupplyRate,
-    market._lastPoolBorrowIndex,
-    market._p2pBorrowIndexFromRates,
     market._p2pIndexCursor_BI,
-    market._p2pBorrowDelta,
-    market._p2pBorrowAmount,
     market._reserveFactor_BI,
+    computeProportionDelta(
+      market._p2pBorrowDelta,
+      market._p2pBorrowAmount,
+      market._lastPoolBorrowIndex,
+      market._p2pBorrowIndexForRates,
+      proportionIdle,
+      __MATHS__
+    ),
     proportionIdle,
     __MATHS__
   );
   market._p2pSupplyRate = computeP2PSupplyRate(
     market._poolBorrowRate,
     market._poolSupplyRate,
-    market._lastPoolSupplyIndex,
-    market._p2pSupplyIndexFromRates,
     market._p2pIndexCursor_BI,
-    market._p2pSupplyDelta,
-    market._p2pSupplyAmount,
     market._reserveFactor_BI,
+    computeProportionDelta(
+      market._p2pSupplyDelta,
+      market._p2pSupplyAmount,
+      market._lastPoolSupplyIndex,
+      market._p2pSupplyIndexForRates,
+      proportionIdle,
+      __MATHS__
+    ),
     proportionIdle,
     __MATHS__
   );
@@ -1045,7 +1234,8 @@ export function updateP2PRates(market: Market, __MATHS__: IMaths): void {
     market.id,
     InterestRateSide.LENDER,
     InterestRateType.P2P,
-    market._p2pSupplyRate
+    __MATHS__
+      .toAPR(market._p2pSupplyRate)
       .toBigDecimal()
       .div(pow10Decimal(market._indexesOffset))
       .times(BIGDECIMAL_HUNDRED)
@@ -1054,17 +1244,12 @@ export function updateP2PRates(market: Market, __MATHS__: IMaths): void {
     market.id,
     InterestRateSide.BORROWER,
     InterestRateType.P2P,
-    market._p2pBorrowRate
+    __MATHS__
+      .toAPR(market._p2pBorrowRate)
       .toBigDecimal()
       .div(pow10Decimal(market._indexesOffset))
       .times(BIGDECIMAL_HUNDRED)
   );
-
-  if (!market.rates) return;
-  const rates = market.rates as string[];
-  const supplyRateId = rates[0];
-  const borrowRateId = rates[3];
-  if (!supplyRateId || !borrowRateId) return;
 
   market.rates = [supplyRateId, p2pSupplyRate.id, p2pBorrowRate.id, borrowRateId];
 }
