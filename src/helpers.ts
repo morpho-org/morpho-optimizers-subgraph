@@ -116,7 +116,7 @@ export function createIndexesUpdated(
   // Used to compute the new P2P indexes from the previous P2P indexes.
   const timestampDiff = timestamp.minus(lastInvariant.timestamp);
   const blockDiff = blockNumber.minus(lastInvariant.blockNumber);
-  if (timestampDiff.le(BIGINT_ONE) || blockDiff.le(BIGINT_ONE)) {
+  if (timestampDiff.le(BigInt.zero()) || blockDiff.le(BigInt.zero())) {
     log.critical("Last invariant {} is the same invariant as the actual {}", [
       lastInvariant.id,
       indexesUpdated.id,

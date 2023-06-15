@@ -38,12 +38,7 @@ import {
   updateSnapshots,
 } from "../helpers";
 import { _createP2PIndexesUpdatedInvariant } from "../utils/common/invariants";
-import {
-  getMarket,
-  getOrInitLendingProtocol,
-  getOrInitToken,
-  initP2PIndexesUpdatedIndexInvariant,
-} from "../utils/initializers";
+import { getMarket, getOrInitLendingProtocol, getOrInitToken } from "../utils/initializers";
 import { IMaths } from "../utils/maths/maths.interface";
 
 import { ReserveUpdateParams } from "./morpho-aave/lending-pool";
