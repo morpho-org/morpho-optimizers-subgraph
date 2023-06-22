@@ -50,7 +50,7 @@ import {
   UserNonceIncremented,
 } from "../../../generated/morpho-v1/MorphoAaveV3/MorphoAaveV3";
 import { Market, UnderlyingTokenMapping } from "../../../generated/morpho-v1/schema";
-import { AAVE_V3_ORACLE_OFFSET, BASE_UNITS, RAY_BI } from "../../constants";
+import { AAVE_V3_ORACLE_OFFSET, BASE_UNITS, BIGDECIMAL_ONE, RAY_BI } from "../../constants";
 import { updateP2PIndexesAndRates } from "../../helpers";
 import {
   createOrInitIndexesAndRatesHistory,
@@ -312,6 +312,14 @@ export function handleMarketCreated(event: MarketCreated): void {
     .getLiquidationBonus()
     .toBigDecimal()
     .div(BASE_UNITS);
+
+  // The liquidation bonus value is equal to the liquidation penalty, the naming is a matter of which side of the liquidation a user is on
+  // The liquidationBonus parameter comes out as above 1
+  // The LiquidationPenalty is thus the liquidationBonus minus 1
+  if (market.liquidationPenalty.gt(BigDecimal.zero())) {
+    market.liquidationPenalty = market.liquidationPenalty.minus(BIGDECIMAL_ONE);
+  }
+
   market.canIsolate = false;
   market.createdTimestamp = event.block.timestamp;
   market.createdBlockNumber = event.block.number;

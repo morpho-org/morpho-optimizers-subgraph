@@ -1,4 +1,4 @@
-import { log } from "@graphprotocol/graph-ts";
+import { BigDecimal, log } from "@graphprotocol/graph-ts";
 
 import { Market } from "../../../generated/morpho-v1/schema";
 import {
@@ -29,6 +29,7 @@ import {
   UnbackedMintCapChanged,
   VariableDebtTokenUpgraded,
 } from "../../../generated/morpho-v1/templates/AaveV3PoolConfigurator/AaveV3PoolConfigurator";
+import { BASE_UNITS, BIGDECIMAL_ONE } from "../../constants";
 
 export function handleATokenUpgraded(event: ATokenUpgraded): void {}
 
@@ -48,7 +49,28 @@ export function handleBorrowableInIsolationChanged(event: BorrowableInIsolationC
 
 export function handleBridgeProtocolFeeUpdated(event: BridgeProtocolFeeUpdated): void {}
 
-export function handleCollateralConfigurationChanged(event: CollateralConfigurationChanged): void {}
+export function handleCollateralConfigurationChanged(event: CollateralConfigurationChanged): void {
+  const market = Market.load(event.params.asset);
+  if (!market) {
+    log.info("[Supply cap changed] Market not created on Morpho: {}", [
+      event.params.asset.toHexString(),
+    ]);
+    return;
+  }
+
+  market.maximumLTV = event.params.ltv.toBigDecimal().div(BASE_UNITS);
+  market.liquidationThreshold = event.params.liquidationThreshold.toBigDecimal().div(BASE_UNITS);
+  market.liquidationPenalty = event.params.liquidationBonus.toBigDecimal().div(BASE_UNITS);
+
+  // The liquidation bonus value is equal to the liquidation penalty, the naming is a matter of which side of the liquidation a user is on
+  // The liquidationBonus parameter comes out as above 1
+  // The LiquidationPenalty is thus the liquidationBonus minus 1
+  if (market.liquidationPenalty.gt(BigDecimal.zero())) {
+    market.liquidationPenalty = market.liquidationPenalty.minus(BIGDECIMAL_ONE);
+  }
+
+  market.save();
+}
 
 export function handleDebtCeilingChanged(event: DebtCeilingChanged): void {}
 

@@ -11,7 +11,7 @@ import {
 import { PriceOracle } from "../../../generated/morpho-v1/MorphoAaveV2/PriceOracle";
 import { ProtocolDataProvider } from "../../../generated/morpho-v1/MorphoAaveV2/ProtocolDataProvider";
 import { Market, UnderlyingTokenMapping } from "../../../generated/morpho-v1/schema";
-import { BASE_UNITS, WAD } from "../../constants";
+import { BASE_UNITS, BIGDECIMAL_ONE, WAD } from "../../constants";
 import {
   createOrInitIndexesAndRatesHistory,
   getOrInitLendingProtocol,
@@ -53,6 +53,14 @@ export function handleMarketCreated(event: MarketCreated): void {
     .getLiquidationBonus()
     .toBigDecimal()
     .div(BASE_UNITS);
+
+  // The liquidation bonus value is equal to the liquidation penalty, the naming is a matter of which side of the liquidation a user is on
+  // The liquidationBonus parameter comes out as above 1
+  // The LiquidationPenalty is thus the liquidationBonus minus 1
+  if (market.liquidationPenalty.gt(BigDecimal.zero())) {
+    market.liquidationPenalty = market.liquidationPenalty.minus(BIGDECIMAL_ONE);
+  }
+
   market.canIsolate = false;
   market.createdTimestamp = event.block.timestamp;
   market.createdBlockNumber = event.block.number;
