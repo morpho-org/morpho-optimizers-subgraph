@@ -51,7 +51,8 @@ export function handleMarketCreated(event: MarketCreated): void {
   market.liquidationPenalty = comptroller
     .liquidationIncentiveMantissa()
     .toBigDecimal()
-    .div(pow10Decimal(DEFAULT_DECIMALS));
+    .div(pow10Decimal(DEFAULT_DECIMALS))
+    .minus(BigDecimal.fromString("1"));
 
   market.canIsolate = false;
   market.createdTimestamp = event.block.timestamp;
