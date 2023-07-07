@@ -1,4 +1,4 @@
-import { Address } from "@graphprotocol/graph-ts";
+import { Address, BigDecimal } from "@graphprotocol/graph-ts";
 
 import { Market } from "../../../generated/morpho-v1/schema";
 import { CompoundOracle } from "../../../generated/morpho-v1/templates";
@@ -38,7 +38,9 @@ export function handleNewLiquidationIncentive(event: NewLiquidationIncentive): v
   const protocol = getOrInitLendingProtocol(MORPHO_COMPOUND_ADDRESS);
   const liquidationIncentive = event.params.newLiquidationIncentiveMantissa
     .toBigDecimal()
-    .div(pow10Decimal(DEFAULT_DECIMALS));
+    .div(pow10Decimal(DEFAULT_DECIMALS))
+    .minus(BigDecimal.fromString("1"));
+
   for (let i = 0; i < protocol.markets.length; i++) {
     const market = getMarket(protocol.markets[i]);
     market.liquidationPenalty = liquidationIncentive;
