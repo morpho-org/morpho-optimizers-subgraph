@@ -12,11 +12,7 @@ import {
   NewLiquidationIncentive,
 } from "../../../generated/morpho-v1/templates/Comptroller/Comptroller";
 import { pow10Decimal } from "../../bn";
-import {
-  DEFAULT_DECIMALS,
-  MORPHO_COMPOUND_ADDRESS,
-  PROTOCOL_SEIZE_SHARE_MANTISSA,
-} from "../../constants";
+import { DEFAULT_DECIMALS, MORPHO_COMPOUND_ADDRESS } from "../../constants";
 import { getMarket, getOrInitLendingProtocol } from "../../utils/initializers";
 
 export function handleCompBorrowSpeedUpdated(event: CompBorrowSpeedUpdated): void {}
@@ -45,7 +41,7 @@ export function handleNewLiquidationIncentive(event: NewLiquidationIncentive): v
     .div(pow10Decimal(DEFAULT_DECIMALS));
   for (let i = 0; i < protocol.markets.length; i++) {
     const market = getMarket(protocol.markets[i]);
-    market.liquidationPenalty = liquidationIncentive.minus(PROTOCOL_SEIZE_SHARE_MANTISSA); // 2.8% goes to the reserve
+    market.liquidationPenalty = liquidationIncentive;
     market.save();
   }
 }
