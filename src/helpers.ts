@@ -54,10 +54,13 @@ function getDayId(timestamp: BigInt): Bytes {
   return Bytes.fromI32(getDay(timestamp).toI32());
 }
 function getMarketDayId(marketAddress: Bytes, timestamp: BigInt): Bytes {
-  return Bytes.fromUTF8(`${marketAddress.toHexString()}-${getDay(timestamp).toString()}`);
+  return marketAddress.concat(Bytes.fromI32(getDay(timestamp).toI32()));
 }
 function getHour(timestamp: BigInt): BigInt {
   return timestamp.div(BigInt.fromI32(SECONDS_PER_HOUR));
+}
+function getMarketHourId(marketAddress: Bytes, timestamp: BigInt): Bytes {
+  return marketAddress.concat(Bytes.fromI32(getHour(timestamp).toI32()));
 }
 function getHourId(timestamp: BigInt): Bytes {
   return Bytes.fromI32(getHour(timestamp).toI32());
@@ -913,7 +916,7 @@ export function getOrCreateMarketHourlySnapshot(
   blockTimestamp: BigInt,
   blockNumber: BigInt
 ): MarketHourlySnapshot {
-  const snapshotID = getHourId(blockTimestamp);
+  const snapshotID = getMarketHourId(market.id, blockTimestamp);
   let snapshot = MarketHourlySnapshot.load(snapshotID);
   if (!snapshot) {
     snapshot = new MarketHourlySnapshot(snapshotID);
