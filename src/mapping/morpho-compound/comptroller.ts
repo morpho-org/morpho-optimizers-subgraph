@@ -41,8 +41,9 @@ export function handleNewLiquidationIncentive(event: NewLiquidationIncentive): v
     .div(pow10Decimal(DEFAULT_DECIMALS))
     .minus(BigDecimal.fromString("1"));
 
-  for (let i = 0; i < protocol.markets.length; i++) {
-    const market = getMarket(protocol.markets[i]);
+  const marketsIds = protocol.markets.load();
+  for (let i = 0; i < protocol.totalPoolCount; i++) {
+    const market = marketsIds[i];
     market.liquidationPenalty = liquidationIncentive;
     market.save();
   }
