@@ -20,7 +20,9 @@ import {
   Withdraw,
 } from "../../../generated/morpho-v1/templates/AaveV3Pool/AaveV3Pool";
 import { MORPHO_AAVE_V2_ADDRESS, MORPHO_AAVE_V3_ADDRESS } from "../../constants";
-import { getOrInitLendingProtocol } from "../../utils/initializers";
+import { fetchAssetPrice } from "../../utils/aaveV2/fetchers";
+import { fetchAssetPriceAaveV3 } from "../../utils/aaveV3/fetchers";
+import { getOrInitLendingProtocol, getOrInitToken } from "../../utils/initializers";
 import { AaveMath } from "../../utils/maths/AaveMath";
 import { _handleReserveUpdate } from "../common";
 import { ReserveUpdateParams } from "../morpho-aave/lending-pool";
@@ -52,6 +54,16 @@ export function handleReserveDataUpdated(event: ReserveDataUpdated): void {
     return;
   }
   const protocol = getOrInitLendingProtocol(MORPHO_AAVE_V3_ADDRESS);
+
+  // update the token price frequently
+  const tokenPrice = fetchAssetPriceAaveV3(market);
+
+  const inputToken = getOrInitToken(event.params.reserve);
+  market.inputTokenPriceUSD = tokenPrice;
+  inputToken.lastPriceBlockNumber = event.block.number;
+  inputToken.lastPriceUSD = tokenPrice;
+  market.save();
+  inputToken.save();
 
   const params = new ReserveUpdateParams(
     event,

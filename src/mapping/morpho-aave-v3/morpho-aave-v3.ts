@@ -346,10 +346,13 @@ export function handleMarketCreated(event: MarketCreated): void {
   underlyingMapping.save();
 
   market.inputTokenBalance = underlying.balanceOf(morphoMarket.aToken);
-  market.inputTokenPriceUSD = oracle
-    .getAssetPrice(underlying._address)
-    .toBigDecimal()
-    .div(AAVE_V3_ORACLE_OFFSET);
+
+  const price = oracle.getAssetPrice(underlying._address).toBigDecimal().div(AAVE_V3_ORACLE_OFFSET);
+  token.lastPriceUSD = price;
+  token.lastPriceBlockNumber = event.block.number;
+  token.save();
+
+  market.inputTokenPriceUSD = price;
 
   market.totalValueLockedUSD = BigDecimal.zero();
   market.cumulativeSupplySideRevenueUSD = BigDecimal.zero();
