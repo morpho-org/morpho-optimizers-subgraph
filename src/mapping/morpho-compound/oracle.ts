@@ -69,5 +69,6 @@ export function handlePriceUpdated(event: PriceUpdated): void {
   market.inputTokenPriceUSD = price;
   market.save();
   inputToken.lastPriceUSD = price;
+  inputToken.lastPriceBlockNumber = event.block.number;
   inputToken.save();
 }
