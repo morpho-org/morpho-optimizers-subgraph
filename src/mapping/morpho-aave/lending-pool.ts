@@ -43,6 +43,7 @@ export function handleReserveDataUpdated(event: ReserveDataUpdated): void {
   // update the token price frequently
   const tokenPrice = fetchAssetPrice(market);
   market.inputTokenPriceUSD = tokenPrice;
+  inputToken.lastPriceBlockNumber = event.block.number;
   inputToken.lastPriceUSD = tokenPrice;
   market.save();
   inputToken.save();
