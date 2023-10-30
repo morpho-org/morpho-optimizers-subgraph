@@ -566,6 +566,8 @@ templates:
       abis:
         - name: AaveV3Pool
           file: ../../abis/aave-v3/AaveV3Pool.json
+        - name: MorphoAaveV3
+          file: ../../abis/aave-v3/MorphoAaveV3.json
       eventHandlers:
         - event: BackUnbacked(indexed address,indexed address,uint256,uint256)
           handler: handleBackUnbacked
