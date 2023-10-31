@@ -568,6 +568,10 @@ templates:
           file: ../../abis/aave-v3/AaveV3Pool.json
         - name: MorphoAaveV3
           file: ../../abis/aave-v3/MorphoAaveV3.json
+        - name: AaveV3AddressesProvider
+          file: ../../abis/aave-v3/AaveV3AddressesProvider.json
+        - name: AaveV3PriceOracle
+          file: ../../abis/aave-v3/AaveV3PriceOracle.json
       eventHandlers:
         - event: BackUnbacked(indexed address,indexed address,uint256,uint256)
           handler: handleBackUnbacked
