@@ -49,7 +49,7 @@ import {
   ReserveFeeClaimed,
   UserNonceIncremented,
 } from "../../../generated/morpho-v1/MorphoAaveV3/MorphoAaveV3";
-import { Market, UnderlyingTokenMapping } from "../../../generated/morpho-v1/schema";
+import { EMode, Market, UnderlyingTokenMapping } from "../../../generated/morpho-v1/schema";
 import { AAVE_V3_ORACLE_OFFSET, BASE_UNITS, BIGDECIMAL_ONE, RAY_BI } from "../../constants";
 import { updateP2PIndexesAndRates } from "../../helpers";
 import {
@@ -473,6 +473,22 @@ export function handleMarketCreated(event: MarketCreated): void {
   const poolCaps = dataProvider.getReserveCaps(underlying._address);
   market.supplyCap = poolCaps.getSupplyCap();
   market.borrowCap = poolCaps.getBorrowCap();
+
+  const eModeId = dataProvider.getReserveEModeCategory(underlying._address);
+  const eMode = EMode.load(eModeId.toString());
+  if (!eMode) {
+    market._liquidationPenalty = market.liquidationPenalty;
+    market._liquidationThreshold = market.liquidationThreshold;
+    market._maximumLTV = market.maximumLTV;
+    market._oracle = market.oracle;
+  } else {
+    market._eMode = eMode.id;
+    market._liquidationPenalty = eMode.liquidationPenalty;
+    market._liquidationThreshold = eMode.liquidationThreshold;
+    market._maximumLTV = eMode.maximumLTV;
+    market._oracle = eMode.oracle;
+  }
+
   market.save();
 
   const list = getOrInitMarketList(event.address);

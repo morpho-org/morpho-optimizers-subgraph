@@ -1,6 +1,6 @@
 import { BigDecimal, log } from "@graphprotocol/graph-ts";
 
-import { Market } from "../../../generated/morpho-v1/schema";
+import { EMode, Market } from "../../../generated/morpho-v1/schema";
 import {
   ATokenUpgraded,
   BorrowCapChanged,
@@ -69,14 +69,63 @@ export function handleCollateralConfigurationChanged(event: CollateralConfigurat
     market.liquidationPenalty = market.liquidationPenalty.minus(BIGDECIMAL_ONE);
   }
 
+  market._liquidationPenalty = market.liquidationPenalty;
+  market._liquidationThreshold = market.liquidationThreshold;
+  market._maximumLTV = market.maximumLTV;
+
   market.save();
 }
 
 export function handleDebtCeilingChanged(event: DebtCeilingChanged): void {}
 
-export function handleEModeAssetCategoryChanged(event: EModeAssetCategoryChanged): void {}
+export function handleEModeAssetCategoryChanged(event: EModeAssetCategoryChanged): void {
+  const market = Market.load(event.params.asset);
+  if (!market) {
+    log.info("[EMode changed] Market not created on Morpho: {}", [
+      event.params.asset.toHexString(),
+    ]);
+    return;
+  }
 
-export function handleEModeCategoryAdded(event: EModeCategoryAdded): void {}
+  const eMode = EMode.load(event.params.newCategoryId.toString());
+
+  if (!eMode) {
+    // No eMode
+    market._eMode = null;
+    market.liquidationPenalty = market._liquidationPenalty;
+    market.liquidationThreshold = market._liquidationThreshold;
+    market.maximumLTV = market._maximumLTV;
+    market.oracle = market._oracle;
+    market.save();
+    return;
+  }
+
+  market._eMode = eMode.id;
+  market.liquidationPenalty = eMode.liquidationPenalty;
+  market.liquidationThreshold = eMode.liquidationThreshold;
+  market.maximumLTV = eMode.maximumLTV;
+  market.oracle = eMode.oracle;
+  market.save();
+}
+
+export function handleEModeCategoryAdded(event: EModeCategoryAdded): void {
+  const eMode = new EMode(event.params.categoryId.toString());
+
+  eMode.label = event.params.label;
+  eMode.liquidationThreshold = event.params.liquidationThreshold.toBigDecimal().div(BASE_UNITS);
+  eMode.maximumLTV = event.params.ltv.toBigDecimal().div(BASE_UNITS);
+  eMode.oracle = event.params.oracle;
+  eMode.liquidationPenalty = event.params.liquidationBonus.toBigDecimal().div(BASE_UNITS);
+
+  // The liquidation bonus value is equal to the liquidation penalty, the naming is a matter of which side of the liquidation a user is on
+  // The liquidationBonus parameter comes out as above 1
+  // The LiquidationPenalty is thus the liquidationBonus minus 1
+  if (eMode.liquidationPenalty.gt(BigDecimal.zero())) {
+    eMode.liquidationPenalty = eMode.liquidationPenalty.minus(BIGDECIMAL_ONE);
+  }
+
+  eMode.save();
+}
 
 export function handleFlashloanPremiumToProtocolUpdated(
   event: FlashloanPremiumToProtocolUpdated
