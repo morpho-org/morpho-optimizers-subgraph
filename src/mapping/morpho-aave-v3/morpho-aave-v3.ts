@@ -49,8 +49,8 @@ import {
   ReserveFeeClaimed,
   UserNonceIncremented,
 } from "../../../generated/morpho-v1/MorphoAaveV3/MorphoAaveV3";
-import { Market, UnderlyingTokenMapping } from "../../../generated/morpho-v1/schema";
-import { AAVE_V3_ORACLE_OFFSET, BASE_UNITS, BIGDECIMAL_ONE, RAY_BI } from "../../constants";
+import { EMode, Market, UnderlyingTokenMapping } from "../../../generated/morpho-v1/schema";
+import { AAVE_V3_market_oracle_OFFSET, BASE_UNITS, BIGDECIMAL_ONE, RAY_BI } from "../../constants";
 import { updateP2PIndexesAndRates } from "../../helpers";
 import {
   createOrInitIndexesAndRatesHistory,
@@ -347,7 +347,10 @@ export function handleMarketCreated(event: MarketCreated): void {
 
   market.inputTokenBalance = underlying.balanceOf(morphoMarket.aToken);
 
-  const price = oracle.getAssetPrice(underlying._address).toBigDecimal().div(AAVE_V3_ORACLE_OFFSET);
+  const price = oracle
+    .getAssetPrice(underlying._address)
+    .toBigDecimal()
+    .div(AAVE_V3_market_oracle_OFFSET);
   token.lastPriceUSD = price;
   token.lastPriceBlockNumber = event.block.number;
   token.save();
@@ -473,6 +476,22 @@ export function handleMarketCreated(event: MarketCreated): void {
   const poolCaps = dataProvider.getReserveCaps(underlying._address);
   market.supplyCap = poolCaps.getSupplyCap();
   market.borrowCap = poolCaps.getBorrowCap();
+
+  const eModeId = dataProvider.getReserveEModeCategory(underlying._address);
+  const eMode = EMode.load(eModeId.toString());
+  if (!eMode) {
+    market._market_liquidationPenalty = market.liquidationPenalty;
+    market._market_liquidationThreshold = market.liquidationThreshold;
+    market._market_maximumLTV = market.maximumLTV;
+    market._market_oracle = market.oracle;
+  } else {
+    market._eMode = eMode.id;
+    market._market_liquidationPenalty = eMode.liquidationPenalty;
+    market._market_liquidationThreshold = eMode.liquidationThreshold;
+    market._market_maximumLTV = eMode.maximumLTV;
+    market._market_oracle = eMode.oracle;
+  }
+
   market.save();
 
   const list = getOrInitMarketList(event.address);

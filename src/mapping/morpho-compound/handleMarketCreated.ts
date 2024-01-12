@@ -178,6 +178,11 @@ export function handleMarketCreated(event: MarketCreated): void {
   // Compound borrow cap
   market.borrowCap = comptroller.borrowCaps(event.params._poolToken);
 
+  market._market_liquidationPenalty = market.liquidationPenalty;
+  market._market_liquidationThreshold = market.liquidationThreshold;
+  market._market_maximumLTV = market.maximumLTV;
+  market._market_oracle = market.oracle;
+
   market.save();
 
   const list = getOrInitMarketList(event.address);

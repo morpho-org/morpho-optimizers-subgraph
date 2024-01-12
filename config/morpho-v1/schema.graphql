@@ -1210,6 +1210,22 @@ type Market @entity {
 
   " Last P2P Indexes Updated Invariant, used in interests calculation "
   _lastP2PIndexesUpdatedInvariant: _P2PIndexesUpdatedInvariant
+
+  # Aave-v3 Specific data
+  " efficiency mode of the market"
+  _eMode: EMode
+
+  " maximumLTV of the market, no matter the eMode"
+  _market_maximumLTV: BigDecimal!
+
+  " liquidationThreshold of the market, no matter the eMode"
+  _market_liquidationThreshold: BigDecimal!
+
+  " liquidationPenalty of the market, no matter the eMode"
+  _market_liquidationPenalty: BigDecimal!
+
+  " oracle of the market, no matter the eMode"
+  _market_oracle: Oracle
 }
 
 #################################
@@ -2372,4 +2388,26 @@ type _P2PIndexesUpdatedInvariant @entity {
 
   " Percentage of borrow derivation between Morpho and theoretical model "
   _borrowP2PDerivation_BI: BigInt!
+}
+
+# Aave-v3 related
+# Used to store eMode specific risk parameters
+type EMode @entity {
+  " Id of the emode "
+  id: String!
+
+  " Label of the eMode"
+  label: String
+
+  " Maximum loan-to-value ratio as a percentage value for markets in this emode"
+  maximumLTV: BigDecimal!
+
+  " Liquidation threshold as a percentage value for markets in this emode"
+  liquidationThreshold: BigDecimal!
+
+  " Liquidation penalty (or the liquidation bonus for liquidators) as a percentage valuefor markets in this emode"
+  liquidationPenalty: BigDecimal!
+
+  " Details about the price oracle used to get the price of the tokens in this eMode"
+  oracle: Oracle
 }

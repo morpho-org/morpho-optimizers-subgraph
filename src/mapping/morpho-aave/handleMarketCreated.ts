@@ -197,6 +197,12 @@ export function handleMarketCreated(event: MarketCreated): void {
   market.p2pBorrowInterestsUSD = BigDecimal.zero();
   market._indexesOffset = 27;
   market.rates = [];
+
+  market._market_liquidationPenalty = market.liquidationPenalty;
+  market._market_liquidationThreshold = market.liquidationThreshold;
+  market._market_maximumLTV = market.maximumLTV;
+  market._market_oracle = market.oracle;
+
   market.save();
 
   const list = getOrInitMarketList(event.address);
