@@ -4,7 +4,7 @@ import { AaveV3AddressesProvider } from "../../../generated/morpho-v1/MorphoAave
 import { AaveV3PriceOracle } from "../../../generated/morpho-v1/MorphoAaveV3/AaveV3PriceOracle";
 import { MorphoAaveV3 } from "../../../generated/morpho-v1/MorphoAaveV3/MorphoAaveV3";
 import { Market } from "../../../generated/morpho-v1/schema";
-import { AAVE_V3_ORACLE_OFFSET, MORPHO_AAVE_V3_ADDRESS } from "../../constants";
+import { AAVE_V3_market_oracle_OFFSET, MORPHO_AAVE_V3_ADDRESS } from "../../constants";
 
 export function fetchAssetPriceAaveV3(market: Market): BigDecimal {
   const morpho = MorphoAaveV3.bind(MORPHO_AAVE_V3_ADDRESS);
@@ -14,5 +14,5 @@ export function fetchAssetPriceAaveV3(market: Market): BigDecimal {
   return oracle
     .getAssetPrice(Address.fromString(market.inputToken.toHexString()))
     .toBigDecimal()
-    .div(AAVE_V3_ORACLE_OFFSET);
+    .div(AAVE_V3_market_oracle_OFFSET);
 }

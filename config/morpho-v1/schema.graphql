@@ -1216,16 +1216,16 @@ type Market @entity {
   _eMode: EMode
 
   " maximumLTV of the market, no matter the eMode"
-  _maximumLTV: BigDecimal!
+  _market_maximumLTV: BigDecimal!
 
   " liquidationThreshold of the market, no matter the eMode"
-  _liquidationThreshold: BigDecimal!
+  _market_liquidationThreshold: BigDecimal!
 
   " liquidationPenalty of the market, no matter the eMode"
-  _liquidationPenalty: BigDecimal!
+  _market_liquidationPenalty: BigDecimal!
 
   " oracle of the market, no matter the eMode"
-  _oracle: Oracle
+  _market_oracle: Oracle
 }
 
 #################################

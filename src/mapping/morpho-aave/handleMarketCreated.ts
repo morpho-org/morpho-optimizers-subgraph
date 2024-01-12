@@ -198,10 +198,10 @@ export function handleMarketCreated(event: MarketCreated): void {
   market._indexesOffset = 27;
   market.rates = [];
 
-  market._liquidationPenalty = market.liquidationPenalty;
-  market._liquidationThreshold = market.liquidationThreshold;
-  market._maximumLTV = market.maximumLTV;
-  market._oracle = market.oracle;
+  market._market_liquidationPenalty = market.liquidationPenalty;
+  market._market_liquidationThreshold = market.liquidationThreshold;
+  market._market_maximumLTV = market.maximumLTV;
+  market._market_oracle = market.oracle;
 
   market.save();
 

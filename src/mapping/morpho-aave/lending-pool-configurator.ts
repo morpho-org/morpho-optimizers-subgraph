@@ -22,9 +22,9 @@ export function handleCollateralConfigurationChanged(event: CollateralConfigurat
     market.liquidationPenalty = market.liquidationPenalty.minus(BIGDECIMAL_ONE);
   }
 
-  market._liquidationPenalty = market.liquidationPenalty;
-  market._liquidationThreshold = market.liquidationThreshold;
-  market._maximumLTV = market.maximumLTV;
+  market._market_liquidationPenalty = market.liquidationPenalty;
+  market._market_liquidationThreshold = market.liquidationThreshold;
+  market._market_maximumLTV = market.maximumLTV;
 
   market.save();
 }

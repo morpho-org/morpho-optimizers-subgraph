@@ -45,7 +45,7 @@ export function handleNewLiquidationIncentive(event: NewLiquidationIncentive): v
   for (let i = 0; i < protocol.totalPoolCount; i++) {
     const market = marketsIds[i];
     market.liquidationPenalty = liquidationIncentive;
-    market._liquidationPenalty = market.liquidationPenalty;
+    market._market_liquidationPenalty = market.liquidationPenalty;
     market.save();
   }
 }
@@ -56,7 +56,7 @@ export function handleNewCollateralFactor(event: NewCollateralFactor): void {
   market.liquidationThreshold = event.params.newCollateralFactorMantissa
     .toBigDecimal()
     .div(pow10Decimal(DEFAULT_DECIMALS));
-  market._liquidationThreshold = market.liquidationThreshold;
+  market._market_liquidationThreshold = market.liquidationThreshold;
   market.save();
 }
 

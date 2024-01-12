@@ -69,9 +69,9 @@ export function handleCollateralConfigurationChanged(event: CollateralConfigurat
     market.liquidationPenalty = market.liquidationPenalty.minus(BIGDECIMAL_ONE);
   }
 
-  market._liquidationPenalty = market.liquidationPenalty;
-  market._liquidationThreshold = market.liquidationThreshold;
-  market._maximumLTV = market.maximumLTV;
+  market._market_liquidationPenalty = market.liquidationPenalty;
+  market._market_liquidationThreshold = market.liquidationThreshold;
+  market._market_maximumLTV = market.maximumLTV;
 
   market.save();
 }
@@ -92,10 +92,10 @@ export function handleEModeAssetCategoryChanged(event: EModeAssetCategoryChanged
   if (!eMode) {
     // No eMode
     market._eMode = null;
-    market.liquidationPenalty = market._liquidationPenalty;
-    market.liquidationThreshold = market._liquidationThreshold;
-    market.maximumLTV = market._maximumLTV;
-    market.oracle = market._oracle;
+    market.liquidationPenalty = market._market_liquidationPenalty;
+    market.liquidationThreshold = market._market_liquidationThreshold;
+    market.maximumLTV = market._market_maximumLTV;
+    market.oracle = market._market_oracle;
     market.save();
     return;
   }

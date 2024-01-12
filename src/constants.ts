@@ -48,7 +48,7 @@ export const HALF_RAY_BI = RAY_BI.div(BIGINT_TWO);
 export const WAD_RAY_RATIO = BigInt.fromI32(10).pow(9);
 export const HALF_WAD_RAY_RATIO = WAD_RAY_RATIO.div(BIGINT_TWO);
 
-export const AAVE_V3_ORACLE_OFFSET = BigDecimal.fromString("100000000"); // 1e8
+export const AAVE_V3_market_oracle_OFFSET = BigDecimal.fromString("100000000"); // 1e8
 
 export namespace ProtocolType {
   export const LENDING = "LENDING";
