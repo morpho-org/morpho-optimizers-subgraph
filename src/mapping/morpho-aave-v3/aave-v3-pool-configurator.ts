@@ -58,20 +58,24 @@ export function handleCollateralConfigurationChanged(event: CollateralConfigurat
     return;
   }
 
-  market.maximumLTV = event.params.ltv.toBigDecimal().div(BASE_UNITS);
-  market.liquidationThreshold = event.params.liquidationThreshold.toBigDecimal().div(BASE_UNITS);
-  market.liquidationPenalty = event.params.liquidationBonus.toBigDecimal().div(BASE_UNITS);
+  market._market_maximumLTV = event.params.ltv.toBigDecimal().div(BASE_UNITS);
+  market._market_liquidationThreshold = event.params.liquidationThreshold
+    .toBigDecimal()
+    .div(BASE_UNITS);
+  market._market_liquidationPenalty = event.params.liquidationBonus.toBigDecimal().div(BASE_UNITS);
 
   // The liquidation bonus value is equal to the liquidation penalty, the naming is a matter of which side of the liquidation a user is on
   // The liquidationBonus parameter comes out as above 1
   // The LiquidationPenalty is thus the liquidationBonus minus 1
-  if (market.liquidationPenalty.gt(BigDecimal.zero())) {
-    market.liquidationPenalty = market.liquidationPenalty.minus(BIGDECIMAL_ONE);
+  if (market._market_liquidationPenalty.gt(BigDecimal.zero())) {
+    market._market_liquidationPenalty = market._market_liquidationPenalty.minus(BIGDECIMAL_ONE);
   }
 
-  market._market_liquidationPenalty = market.liquidationPenalty;
-  market._market_liquidationThreshold = market.liquidationThreshold;
-  market._market_maximumLTV = market.maximumLTV;
+  if (market._eMode === "0" || !market._eMode) {
+    market.liquidationPenalty = market._market_liquidationPenalty;
+    market.liquidationThreshold = market._market_liquidationThreshold;
+    market.maximumLTV = market._market_maximumLTV;
+  }
 
   market.save();
 }
