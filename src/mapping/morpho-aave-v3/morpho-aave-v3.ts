@@ -50,7 +50,13 @@ import {
   UserNonceIncremented,
 } from "../../../generated/morpho-v1/MorphoAaveV3/MorphoAaveV3";
 import { EMode, Market, UnderlyingTokenMapping } from "../../../generated/morpho-v1/schema";
-import { AAVE_V3_market_oracle_OFFSET, BASE_UNITS, BIGDECIMAL_ONE, RAY_BI } from "../../constants";
+import {
+  AAVE_V3_market_oracle_OFFSET,
+  BASE_UNITS,
+  BIGDECIMAL_ONE,
+  INT_ZERO,
+  RAY_BI,
+} from "../../constants";
 import { updateP2PIndexesAndRates } from "../../helpers";
 import {
   createOrInitIndexesAndRatesHistory,
@@ -303,12 +309,12 @@ export function handleMarketCreated(event: MarketCreated): void {
   market.canBorrowFrom = true;
   market.canUseAsCollateral = true;
 
-  market.maximumLTV = reserveConfiguration.getLtv().toBigDecimal().div(BASE_UNITS);
-  market.liquidationThreshold = reserveConfiguration
+  market._market_maximumLTV = reserveConfiguration.getLtv().toBigDecimal().div(BASE_UNITS);
+  market._market_liquidationThreshold = reserveConfiguration
     .getLiquidationThreshold()
     .toBigDecimal()
     .div(BASE_UNITS);
-  market.liquidationPenalty = reserveConfiguration
+  market._market_liquidationPenalty = reserveConfiguration
     .getLiquidationBonus()
     .toBigDecimal()
     .div(BASE_UNITS);
@@ -316,8 +322,8 @@ export function handleMarketCreated(event: MarketCreated): void {
   // The liquidation bonus value is equal to the liquidation penalty, the naming is a matter of which side of the liquidation a user is on
   // The liquidationBonus parameter comes out as above 1
   // The LiquidationPenalty is thus the liquidationBonus minus 1
-  if (market.liquidationPenalty.gt(BigDecimal.zero())) {
-    market.liquidationPenalty = market.liquidationPenalty.minus(BIGDECIMAL_ONE);
+  if (market._market_liquidationPenalty.gt(BigDecimal.zero())) {
+    market._market_liquidationPenalty = market._market_liquidationPenalty.minus(BIGDECIMAL_ONE);
   }
 
   market.canIsolate = false;
@@ -478,18 +484,41 @@ export function handleMarketCreated(event: MarketCreated): void {
   market.borrowCap = poolCaps.getBorrowCap();
 
   const eModeId = dataProvider.getReserveEModeCategory(underlying._address);
-  const eMode = EMode.load(eModeId.toString());
+
+  let eMode = EMode.load(eModeId.toString());
+  if (!eMode && !eModeId.isZero()) {
+    const eModeData = aavev3Pool.getEModeCategoryData(eModeId.toI32());
+    if (eModeData) {
+      eMode = new EMode(eModeId.toString());
+      eMode.maximumLTV = BigInt.fromI32(eModeData.ltv).toBigDecimal().div(BASE_UNITS);
+      eMode.label = eModeData.label;
+      eMode.liquidationThreshold = BigInt.fromI32(eModeData.liquidationThreshold)
+        .toBigDecimal()
+        .div(BASE_UNITS);
+      eMode.liquidationPenalty = BigInt.fromI32(eModeData.liquidationBonus)
+        .toBigDecimal()
+        .div(BASE_UNITS);
+      // The liquidation bonus value is equal to the liquidation penalty, the naming is a matter of which side of the liquidation a user is on
+      // The liquidationBonus parameter comes out as above 1
+      // The LiquidationPenalty is thus the liquidationBonus minus 1
+      if (eMode.liquidationPenalty.gt(BigDecimal.zero())) {
+        eMode.liquidationPenalty = eMode.liquidationPenalty.minus(BIGDECIMAL_ONE);
+      }
+      eMode.save();
+    }
+  }
+
   if (!eMode) {
-    market._market_liquidationPenalty = market.liquidationPenalty;
-    market._market_liquidationThreshold = market.liquidationThreshold;
-    market._market_maximumLTV = market.maximumLTV;
-    market._market_oracle = market.oracle;
+    market.liquidationPenalty = market._market_liquidationPenalty;
+    market.liquidationThreshold = market._market_liquidationThreshold;
+    market.maximumLTV = market._market_maximumLTV;
+    market.oracle = market._market_oracle;
   } else {
     market._eMode = eMode.id;
-    market._market_liquidationPenalty = eMode.liquidationPenalty;
-    market._market_liquidationThreshold = eMode.liquidationThreshold;
-    market._market_maximumLTV = eMode.maximumLTV;
-    market._market_oracle = eMode.oracle;
+    market.liquidationPenalty = eMode.liquidationPenalty;
+    market.liquidationThreshold = eMode.liquidationThreshold;
+    market.maximumLTV = eMode.maximumLTV;
+    market.oracle = eMode.oracle;
   }
 
   market.save();

@@ -15,14 +15,16 @@ import {
   _MarketList,
   _IndexesAndRatesHistory,
   _P2PIndexesUpdatedInvariant,
+  EMode,
 } from "../../generated/morpho-v1/schema";
 import {
   AaveV3Pool as AaveV3PoolTemplate,
-  AaveV3PoolConfigurator,
+  AaveV3PoolConfigurator as AaveV3PoolConfiguratorTemplate,
   Comptroller as ComptrollerTemplate,
   LendingPool as LendingPoolTemplate,
 } from "../../generated/morpho-v1/templates";
 import { LendingPoolConfigurator as LendingPoolConfiguratorTemplate } from "../../generated/morpho-v1/templates";
+import { AaveV3PoolConfigurator } from "../../generated/morpho-v1/templates/AaveV3PoolConfigurator/AaveV3PoolConfigurator";
 import { pow10Decimal } from "../bn";
 import {
   AAVE_CLOSE_FACTOR,
@@ -168,7 +170,7 @@ export const getOrInitLendingProtocol = (protocolAddress: Address): LendingProto
 
       AaveV3PoolTemplate.create(morpho.pool());
       const addressesProvider = AaveV3AddressesProvider.bind(morpho.addressesProvider());
-      AaveV3PoolConfigurator.create(addressesProvider.getPoolConfigurator());
+      AaveV3PoolConfiguratorTemplate.create(addressesProvider.getPoolConfigurator());
 
       protocol.name = "Morpho Aave v3";
       protocol.slug = "morpho-aave-v3";
